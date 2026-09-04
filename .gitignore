@@ -1,0 +1,29 @@
+# Data and generated features
+data/
+data_init/
+data_split/
+feature_split/
+
+# Trained models and predictions
+models/
+models_ours/
+*.cbm
+*.npy
+*.npz
+*.pkl
+
+# Training outputs and caches
+catboost_info/
+outputs/
+wandb/
+inference_results*/
+predictions/
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+*.log
+*.tfevents*
+*.swp
+
+# OS
+.DS_Store
