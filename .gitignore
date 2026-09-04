@@ -29,3 +29,6 @@ __pycache__/
 .DS_Store
 
 inference_results*.txt
+
+baselines/AMNet_split/results_*.txt
+baselines/AMNet_split/train_results_*.txt
