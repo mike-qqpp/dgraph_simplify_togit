@@ -1,0 +1,18 @@
+{
+  "data_path": "../data/amazon.npz",
+  "model_path": "../models/AMNet/amazon/model_exp1_best.pth",
+  "device": "cpu",
+  "inference_time": 4.453089237213135,
+  "total_inference_time": 4.45518684387207,
+  "peak_memory": 33.4609375,
+  "num_test_nodes": 2389,
+  "threshold": 0.5,
+  "metrics": {
+    "auc_roc": 0.8819765838109541,
+    "auc_pr": 0.7802193122043416,
+    "accuracy": 0.9765592298032649,
+    "precision": 0.8805031446540881,
+    "recall": 0.7909604519774012,
+    "f1": 0.8333333333333334
+  }
+}

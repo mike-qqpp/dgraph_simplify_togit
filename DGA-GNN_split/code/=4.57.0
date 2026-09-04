@@ -1,0 +1,15 @@
+Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+Collecting lightning-utilities==0.8.0
+  Downloading lightning_utilities-0.8.0-py3-none-any.whl (20 kB)
+Collecting fsspec==2023.4.0
+  Downloading fsspec-2023.4.0-py3-none-any.whl (153 kB)
+Requirement already satisfied: PyYAML in /usr/local/lib/python3.8/dist-packages (6.0)
+Requirement already satisfied: tqdm in /usr/local/lib/python3.8/dist-packages (4.64.1)
+Collecting torchmetrics==0.11.4
+  Downloading torchmetrics-0.11.4-py3-none-any.whl (519 kB)
+Installing collected packages: torchmetrics, lightning-utilities, fsspec
+  Attempting uninstall: fsspec
+    Found existing installation: fsspec 2025.3.0
+    Uninstalling fsspec-2025.3.0:
+      Successfully uninstalled fsspec-2025.3.0
+Successfully installed fsspec-2023.4.0 lightning-utilities-0.8.0 torchmetrics-0.11.4

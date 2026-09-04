@@ -1,0 +1,22 @@
+dname: dgraphfin
+project: dga_reproduction
+model: dga
+
+# 模型超参数
+bin_encoding: True
+n_head: 1
+n_hidden: 64
+p: 0.3
+k: 4
+z: 0.025
+seed: 321
+
+# 训练超参数
+bs: 512
+lr: 1e-3
+weight_decay: 1e-5
+max_epochs: 2 #200
+patience: 20
+usegpu: True
+gpuid: 0
+nowandb: False

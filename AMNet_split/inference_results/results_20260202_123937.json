@@ -1,0 +1,17 @@
+{
+  "data_path": "../data/yelpchi.npz",
+  "model_path": "../models/AMNet/yelpchi/model_exp1_best.pth",
+  "inference_time": 0.20765447616577148,
+  "total_inference_time": 1.0631763935089111,
+  "peak_memory": 68.1591796875,
+  "num_test_nodes": 9191,
+  "threshold": 0.5,
+  "metrics": {
+    "auc_roc": 0.7446428326927128,
+    "auc_pr": 0.3336799366876979,
+    "accuracy": 0.6876292024806876,
+    "precision": 0.27657684335208765,
+    "recall": 0.6857562408223201,
+    "f1": 0.3941759864950411
+  }
+}

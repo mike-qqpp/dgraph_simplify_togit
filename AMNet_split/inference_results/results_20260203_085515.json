@@ -1,0 +1,17 @@
+{
+  "data_path": "../data/dgraphfin.npz",
+  "model_path": "../models/AMNet/dgraphfin/model_exp1_best.pth",
+  "inference_time": 35.27284836769104,
+  "total_inference_time": 36.39226508140564,
+  "peak_memory": 1625.45849609375,
+  "num_test_nodes": 183840,
+  "threshold": 0.5,
+  "metrics": {
+    "auc_roc": 0.668587221292245,
+    "auc_pr": 0.01938990164786108,
+    "accuracy": 0.6244179721496954,
+    "precision": 0.02262352789662722,
+    "recall": 0.679707652622528,
+    "f1": 0.0437895553185891
+  }
+}

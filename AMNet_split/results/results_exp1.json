@@ -1,0 +1,11 @@
+{
+  "exp_num": 1,
+  "val_auc_roc": 0.9007170699582616,
+  "val_auc_pr": 0.6955033910063926,
+  "test_auc_roc": 0.9146120210781665,
+  "test_auc_pr": 0.7272396820232815,
+  "test_inference_time": 0.07688593864440918,
+  "peak_memory": 60.39501953125,
+  "best_epoch": 34,
+  "model_path": "./results/model_exp1_best.pth"
+}
