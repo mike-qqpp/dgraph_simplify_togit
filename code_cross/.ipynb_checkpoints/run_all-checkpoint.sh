@@ -1,5 +1,0 @@
-# sh run_fe_train.sh  tfinance train
-# bash run_fe_test.sh tfinance test
-
-sh run_fe_train.sh  dgraphfin train
-bash run_fe_test.sh dgraphfin test
