@@ -1,0 +1,25 @@
+batch_size: 5120
+hid_dim: 32
+lr: 0.003
+wd: !!float 1e-4
+n_layers: 2
+dropout: [0.2, 0.1]
+device: "cuda:0"
+early_stopping: 10
+n_fold: 5 
+seed: 2023
+max_epochs: 4 #35
+gated: True
+dataset: dgraphfin
+test_size: 0.6
+nei_att_heads:
+    yelp: 4
+    amazon: 5
+    S-FFSD: 9
+    dgraphfin: 4
+    dgraph_exp130_nona: 4
+    dgraph_exp130_v2_nona: 4
+    tfinance: 4
+    amazon: 4
+    yelpchi: 4
+
