@@ -1,30 +1,117 @@
-ta_split/` - 数据集划分脚本，将数据集划分为 train 和 test，test 用于推理
+# FinShield
 
-### Ours 代码（先制作特征）
+Research code for **FinShield**, an offline LLM-assisted feature-engineering
+pipeline for graph-based financial fraud detection. The LLM is used during
+development to assist with feature-engineering code; the released downstream
+pipeline extracts graph features and trains a CatBoost classifier.
 
-#### code_cross
-原始特征制作和模型训练：
-- `run_all.sh` - 制作原始特征
-- `run_trainmodel.sh` - 训练模型
+## Repository layout
 
-#### code_cross_tfinance
-TFinance 数据集专用（独立的 prompt 设计代码）：
-- `run_fe_train.sh` - 制作训练集原始特征
-- `run_fe_test.sh` - 制作测试集原始特征
-- `run_train.sh` - 训练模型
+```text
+.
+├── code_cross/             # Main feature, training, and evaluation pipeline
+├── code_cross_tfinance/    # T-Finance-specific feature pipeline
+├── code_cross_all/         # Dataset-specific cross-feature experiments
+├── baselines/              # Baseline implementations and their local scripts
+└── reproducibility/        # Prompt material and frozen DGraph feature order
+```
 
-> 注：TFinance 采用独立的代码，因与其他三个数据集使用同一代码生成的特征效果不佳。
+### Main implementation
 
-#### code_cross_all
-交叉组合特征实验代码（各 `.py` 文件）
+- `code_cross/` supports the DGraph, Amazon, YelpChi, and T-Finance data
+  layouts used by the shared feature and CatBoost pipeline.
+- `code_cross_tfinance/` contains the dedicated multi-stage T-Finance feature
+  pipeline.
+- `code_cross_all/` contains standalone cross-feature implementations for the
+  supported datasets.
 
-### 消融实验代码（CPU 版本）
-各 `*_split` 目录包含将训练和推理分开的各个算法的代码：
+### Baselines
 
-| 目录 | 推理脚本 |
-|------|----------|
-| `AMNet_split/` | `run_infer_cpu.sh` |
-| `DGA-GNN_split/` | `./code/run_infer_cpu.sh` |
-| `DSGAD-mul_split/` | `run_infer_cpu.sh` |
-| `GHRN_split/` | `run_infer_cpu.sh` |
-| `antifraud_split/` | `run_infer_cpu.sh` |
+`baselines/` contains separated implementations for AMNet, DGA-GNN, DSGAD,
+GHRN, AntiFraud, and WWW25-Grad. These methods have heterogeneous dependencies
+and entry points; consult the README or runner script within each baseline
+directory before executing it.
+
+## Requirements
+
+The repository does not currently provide a pinned root environment file. The
+main pipelines import the following packages:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install numpy pandas scipy scikit-learn catboost torch dgl \
+  tqdm joblib click networkx psutil lightgbm matplotlib
+```
+
+Install PyTorch and DGL builds compatible with your operating system and
+accelerator configuration. The DGraph feature and CatBoost training path runs
+with `task_type='CPU'` in the released training code.
+
+## Data
+
+Datasets and generated artifacts are intentionally excluded from version
+control. Obtain each dataset from its original distribution and comply with its
+terms of use. For DGraph background and access information, see the
+[DGraph paper](https://arxiv.org/abs/2207.03579).
+
+The DGraph preparation script expects the following local input:
+
+```text
+data/
+└── dgraphfin.npz
+```
+
+The input archive is expected to contain `x`, `y`, `edge_index`, `edge_type`,
+`edge_timestamp`, `train_mask`, `valid_mask`, and `test_mask`. Generated split
+files are written under `data_split/`; generated features are written under
+`feature_split/`; trained models and predictions are written under
+`models_ours/`. These directories are ignored by Git.
+
+## DGraph workflow
+
+Run commands from `code_cross/` so that the relative paths used by the scripts
+resolve correctly.
+
+```bash
+cd code_cross
+
+# Create data_split/dgraphfin_{train,valid,test}.npz from data/dgraphfin.npz.
+mkdir -p ../data_split
+python data_split_dgraphfin.py
+
+# Build training features and train the CatBoost ensemble.
+bash run_fe_train.sh dgraphfin train
+
+# Build test features and evaluate the trained ensemble.
+bash run_fe_test.sh dgraphfin test
+```
+
+The runner scripts create intermediate `.pkl` feature files and model outputs
+in the ignored directories described above. They also contain optional runtime
+and memory measurements. Review the scripts before changing paths, dataset
+names, or resource-related settings.
+
+## T-Finance workflow
+
+The T-Finance pipeline is kept separate because it uses a different staged
+feature workflow. Its primary entry points are:
+
+```text
+code_cross_tfinance/run_fe_train.sh
+code_cross_tfinance/run_fe_test.sh
+code_cross_tfinance/run_train.sh
+```
+
+Each runner accepts or defines paths relative to `code_cross_tfinance/`. Check
+the script header before execution and provide the expected
+`data_split/tfinance_{train,test}.npz` inputs.
+
+## Reproducibility materials
+
+[`reproducibility/README.md`](reproducibility/README.md) documents the
+available prompt material, the fixed DGraph cross-feature definitions, and the
+released downstream training configuration.
+[`reproducibility/dgraphfin_final_features.json`](reproducibility/dgraphfin_final_features.json)
+freezes the ordered list of 130 DGraph base features used by the released
+training code.
