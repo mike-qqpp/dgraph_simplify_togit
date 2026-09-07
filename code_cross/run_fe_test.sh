@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# 从命令行参数获取数据集名称和划分
-# 使用方法: ./run_fe_test.sh yelpchi test
-DATASET=${1:-yelpchi}  # 默认值为yelpchi
-SPLIT=${2:-test}      # 默认值为test
+# Read the dataset name and split from command-line arguments.
+# Usage: ./run_fe_test.sh yelpchi test
+DATASET=${1:-yelpchi}  # Default: yelpchi
+SPLIT=${2:-test}      # Default: test
 
-# 记录总开始时间（使用纳秒级精度）
+# Record the overall start time with nanosecond precision.
 TOTAL_START_TIME=$(date +%s.%N)
 echo "========================================"
 echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
@@ -13,21 +13,21 @@ echo "Dataset: ${DATASET}"
 echo "Split: ${SPLIT}"
 echo "========================================"
 
-# 检查必要的目录和文件
+# Check the required directories and files.
 if [ ! -d "../data_split" ]; then
-    echo "错误: ../data_split 目录不存在"
+    echo "Error: directory ../data_split does not exist"
     exit 1
 fi
 
 if [ ! -f "../data_split/${DATASET}_${SPLIT}.npz" ]; then
-    echo "错误: 数据文件 ../data_split/${DATASET}_${SPLIT}.npz 不存在"
+    echo "Error: data file ../data_split/${DATASET}_${SPLIT}.npz does not exist"
     exit 1
 fi
 
-# 创建特征保存目录（如果不存在）
+# Create the feature output directory if it does not exist.
 mkdir -p "../feature_split/${DATASET}/${SPLIT}"
 
-# 初始化变量
+# Initialize variables.
 PART1_TIME=""
 PART1_MEMORY=""
 PART2_TIME=""
@@ -39,7 +39,7 @@ PARTMK_MEMORY=""
 TEST_TIME=""
 TEST_MEMORY=""
 
-# 函数：运行命令并测量时间和内存
+# Run a command and measure its time and memory usage.
 run_with_measurement() {
     local step_name="$1"
     shift
@@ -49,35 +49,35 @@ run_with_measurement() {
     echo ">>> Running $step_name..."
     local START_TIME=$(date +%s.%N)
     
-    # 如果有 /usr/bin/time，使用它来测量内存
+    # Use /usr/bin/time for memory measurement when available.
     if command -v /usr/bin/time >/dev/null 2>&1; then
-        # 创建临时文件存储时间和内存信息
+        # Create a temporary file for timing and memory information.
         local temp_time_file=$(mktemp)
         
-        # 执行命令，使用 /usr/bin/time 捕获内存
+        # Run the command and capture memory usage with /usr/bin/time.
         local temp_output=$(mktemp)
         /usr/bin/time -f "TIME_REAL:%e\nMEMORY_KB:%M" -o "$temp_time_file" bash -c "$cmd" > "$temp_output" 2>&1
         local exit_code=$?
         
-        # 显示命令输出
+        # Display the command output.
         cat "$temp_output"
         rm -f "$temp_output"
         
         local END_TIME=$(date +%s.%N)
         
-        # 提取内存使用
+        # Extract memory usage.
         local memory_kb=$(grep "MEMORY_KB:" "$temp_time_file" | cut -d: -f2)
         local peak_memory_mb="N/A"
         if [ -n "$memory_kb" ] && echo "$memory_kb" | grep -q "^[0-9]\+$"; then
             peak_memory_mb=$(echo "$memory_kb 1024" | awk '{printf "%.4f", $1/$2}')
         fi
         
-        # 计算执行时间
+        # Calculate execution time.
         local execution_time=$(echo "$END_TIME $START_TIME" | awk '{printf "%.4f", $1 - $2}')
         
         rm -f "$temp_time_file"
     else
-        # 如果没有 /usr/bin/time，只测量时间
+        # Measure only time when /usr/bin/time is unavailable.
         eval "$cmd"
         local exit_code=$?
         local END_TIME=$(date +%s.%N)
@@ -96,11 +96,11 @@ run_with_measurement() {
         echo "  Peak memory usage: ${peak_memory_mb} MB"
     fi
     
-    # 返回时间和内存
+    # Return time and memory usage.
     echo "$execution_time $peak_memory_mb"
 }
 
-# 运行各步骤
+# Run all stages.
 echo ""
 
 # ========== Part 1 ==========
@@ -113,7 +113,7 @@ EXIT_CODE=$?
 END_TIME=$(date +%s.%N)
 PART1_TIME=$(echo "$END_TIME $START_TIME" | awk '{printf "%.4f", $1 - $2}')
 
-# 测量内存
+# Measure memory usage.
 if command -v /usr/bin/time >/dev/null 2>&1; then
     PART1_MEMORY_KB=$(/usr/bin/time -f "%M" python runfe_part1_new.py \
       --path_data ../data_split/${DATASET}_${SPLIT}.npz \
@@ -291,7 +291,7 @@ printf "%-35s %-12s %-20s\n" "Part MK (Feature MK)" "$PARTMK_TIME" "$PARTMK_MEMO
 printf "%-35s %-12s %-20s\n" "Test (Model Inference)" "$TEST_TIME" "$TEST_MEMORY"
 echo "------------------------------------------------------------"
 
-# 计算各部分时间之和
+# Calculate the sum of stage runtimes.
 PARTS_SUM=$(echo "$PART1_TIME $PART2_TIME $PART3_TIME $PARTMK_TIME $TEST_TIME" | awk '{printf "%.4f", $1+$2+$3+$4+$5}')
 
 echo "Sum of parts: $PARTS_SUM seconds"
@@ -299,9 +299,9 @@ echo "Total Time: $TOTAL_TIME seconds"
 echo "End time: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "========================================"
 
-# 检查 /usr/bin/time 是否可用
+# Check whether /usr/bin/time is available.
 if ! command -v /usr/bin/time >/dev/null 2>&1; then
     echo ""
-    echo "注意: /usr/bin/time 不可用，内存测量不可用"
-    echo "如需内存测量，请安装: apt-get update && apt-get install -y time"
+    echo "Note: /usr/bin/time is unavailable; memory measurement is disabled"
+    echo "Install it with: apt-get update && apt-get install -y time"
 fi

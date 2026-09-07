@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# 从命令行参数获取数据集名称、数据类型和输入输出目录
-# 使用方法: ./run_features_benchmark.sh [dataset] [split] [input_dir] [output_dir]
-DATASET=${1:-tfinance}   # 默认值为tfinance
-SPLIT=${2:-test}        # 默认值为test
+# Read the dataset name, data type, and I/O directories from command-line arguments.
+# Usage: ./run_features_benchmark.sh [dataset] [split] [input_dir] [output_dir]
+DATASET=${1:-tfinance}   # Default: tfinance
+SPLIT=${2:-test}        # Default: test
 INPUT_DIR=${3:-../data_split}
 OUTPUT_DIR=${4:-../feature_split}
 
-# 记录总开始时间
+# Record the overall start time.
 TOTAL_START_TIME=$(date +%s.%N)
 echo "========================================"
 echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
@@ -17,21 +17,21 @@ echo "Input directory: ${INPUT_DIR}"
 echo "Output directory: ${OUTPUT_DIR}"
 echo "========================================"
 
-# 检查必要的目录和文件
+# Check the required directories and files.
 if [ ! -d "${INPUT_DIR}" ]; then
-    echo "错误: ${INPUT_DIR} 目录不存在"
+    echo "Error: directory ${INPUT_DIR} does not exist"
     exit 1
 fi
 
 if [ ! -f "${INPUT_DIR}/${DATASET}_${SPLIT}.npz" ]; then
-    echo "错误: 数据文件 ${INPUT_DIR}/${DATASET}_${SPLIT}.npz 不存在"
+    echo "Error: data file ${INPUT_DIR}/${DATASET}_${SPLIT}.npz does not exist"
     exit 1
 fi
 
-# 创建特征保存目录
+# Create the feature output directory.
 mkdir -p "${OUTPUT_DIR}/${DATASET}/${SPLIT}"
 
-# 初始化变量
+# Initialize variables.
 STEP1_TIME=""; STEP1_MEMORY=""
 STEP2_TIME=""; STEP2_MEMORY=""
 STEP3_TIME=""; STEP3_MEMORY=""
@@ -44,7 +44,7 @@ STEP9_TIME=""; STEP9_MEMORY=""
 STEP21_TIME=""; STEP21_MEMORY=""
 TEST_TIME=""; TEST_MEMORY=""
 
-# 函数：运行命令并同时测量时间和内存（只运行一次）
+# Run a command while measuring time and memory in one execution.
 run_command() {
     local step_name="$1"
     shift
@@ -54,31 +54,31 @@ run_command() {
     echo ">>> Running ${step_name}..."
     
     if command -v /usr/bin/time >/dev/null 2>&1; then
-        # 使用临时文件存储time命令输出
+        # Store the time-command output in a temporary file.
         local time_file=$(mktemp)
         local output_file=$(mktemp)
         local start_time=$(date +%s.%N)
         
-        # 运行命令，同时捕获时间和内存，将stdout和stderr都保存到文件
+        # Run the command, capture time and memory, and save stdout and stderr.
         /usr/bin/time -f "TIME_REAL:%e\nMEMORY_KB:%M" -o "$time_file" bash -c "$cmd" > "$output_file" 2>&1
         local exit_code=$?
         local end_time=$(date +%s.%N)
         
-        # 显示命令输出
+        # Display the command output.
         cat "$output_file"
         
-        # 读取时间和内存
+        # Read time and memory values.
         local exec_time=$(grep "TIME_REAL:" "$time_file" | cut -d: -f2)
         local mem_kb=$(grep "MEMORY_KB:" "$time_file" | cut -d: -f2)
         
         rm -f "$time_file" "$output_file"
         
-        # 如果没有获取到时间，用start/end计算
+        # Use start/end timestamps if no timing result is available.
         if [ -z "$exec_time" ]; then
             exec_time=$(echo "$end_time $start_time" | awk '{printf "%.4f", $1 - $2}')
         fi
         
-        # 转换内存为MB
+        # Convert memory to MB.
         local mem_mb="N/A"
         if [ -n "$mem_kb" ] && echo "$mem_kb" | grep -q "^[0-9]\+$"; then
             mem_mb=$(echo "$mem_kb 1024" | awk '{printf "%.4f", $1/$2}')
@@ -89,17 +89,17 @@ run_command() {
             echo "  Peak memory usage: ${mem_mb} MB"
         fi
         
-        # 返回时间和内存，使用特殊分隔符，避免与命令输出混淆
+        # Return time and memory with a separator that cannot be confused with output.
         echo "RUN_COMMAND_RESULT:${exec_time}|${mem_mb}"
     else
-        # 没有/usr/bin/time，只测量时间
+        # Measure only time when /usr/bin/time is unavailable.
         local output_file=$(mktemp)
         local start_time=$(date +%s.%N)
         bash -c "$cmd" > "$output_file" 2>&1
         local exit_code=$?
         local end_time=$(date +%s.%N)
         
-        # 显示命令输出
+        # Display the command output.
         cat "$output_file"
         rm -f "$output_file"
         
@@ -115,7 +115,7 @@ run_command() {
     fi
 }
 
-# ========== 1. 基础特征 ==========
+# ========== 1. Base Features ==========
 echo ""
 echo ">>> Running Part 1: Base Features..."
 result=$(run_command "Part 1 (Base Features)" \
@@ -123,7 +123,7 @@ result=$(run_command "Part 1 (Base Features)" \
 STEP1_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP1_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 2. 结构特征 ==========
+# ========== 2. Structural Features ==========
 echo ""
 echo ">>> Running Part 2: Structural Features..."
 result=$(run_command "Part 2 (Structural Features)" \
@@ -131,7 +131,7 @@ result=$(run_command "Part 2 (Structural Features)" \
 STEP2_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP2_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 3. 邻居特征 ==========
+# ========== 3. Neighbor Features ==========
 echo ""
 echo ">>> Running Part 3: Neighbor Features..."
 result=$(run_command "Part 3 (Neighbor Features)" \
@@ -139,7 +139,7 @@ result=$(run_command "Part 3 (Neighbor Features)" \
 STEP3_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP3_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 4. 谱特征 ==========
+# ========== 4. Spectral Features ==========
 echo ""
 echo ">>> Running Part 4: Spectral Features..."
 result=$(run_command "Part 4 (Spectral Features)" \
@@ -147,7 +147,7 @@ result=$(run_command "Part 4 (Spectral Features)" \
 STEP4_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP4_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 5. 图嵌入特征 ==========
+# ========== 5. Graph Embedding Features ==========
 echo ""
 echo ">>> Running Part 5: Embedding Features..."
 result=$(run_command "Part 5 (Embedding Features)" \
@@ -155,7 +155,7 @@ result=$(run_command "Part 5 (Embedding Features)" \
 STEP5_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP5_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 6. 聚类特征 ==========
+# ========== 6. Clustering Features ==========
 echo ""
 echo ">>> Running Part 6: Clustering Features..."
 result=$(run_command "Part 6 (Clustering Features)" \
@@ -163,7 +163,7 @@ result=$(run_command "Part 6 (Clustering Features)" \
 STEP6_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP6_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 7. 异常检测特征 ==========
+# ========== 7. Anomaly-Detection Features ==========
 echo ""
 echo ">>> Running Part 7: Anomaly Features..."
 result=$(run_command "Part 7 (Anomaly Features)" \
@@ -171,7 +171,7 @@ result=$(run_command "Part 7 (Anomaly Features)" \
 STEP7_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP7_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 8. 混合高阶特征 ==========
+# ========== 8. Mixed High-Order Features ==========
 echo ""
 echo ">>> Running Part 8: Mixed Features..."
 result=$(run_command "Part 8 (Mixed Features)" \
@@ -179,7 +179,7 @@ result=$(run_command "Part 8 (Mixed Features)" \
 STEP8_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP8_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 9. 高级金融特征 ==========
+# ========== 9. Advanced Financial Features ==========
 echo ""
 echo ">>> Running Part 9: Advanced Financial Features..."
 result=$(run_command "Part 9 (Advanced Financial Features)" \
@@ -187,12 +187,12 @@ result=$(run_command "Part 9 (Advanced Financial Features)" \
 STEP9_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP9_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 列出已生成的特征文件 ==========
+# ========== List Generated Feature Files ==========
 echo ""
-echo ">>> 列出已生成的特征文件："
-ls -lh "${OUTPUT_DIR}/${DATASET}/${SPLIT}"/*.pkl 2>/dev/null || echo "暂无特征文件"
+echo ">>> Generated feature files:"
+ls -lh "${OUTPUT_DIR}/${DATASET}/${SPLIT}"/*.pkl 2>/dev/null || echo "No feature files are available"
 
-# ========== 21. 衍生特征工程 ==========
+# ========== 21. Derived Feature Engineering ==========
 echo ""
 echo ">>> Running Part 21: Derived Features..."
 result=$(run_command "Part 21 (Derived Features)" \
@@ -211,7 +211,7 @@ result=$(run_command "Part 21 (Derived Features)" \
 STEP21_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 STEP21_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== Test: 模型推理 ==========
+# ========== Test: Model Inference ==========
 echo ""
 echo ">>> Running Test: Model Inference..."
 result=$(run_command "Test (Model Inference)" \
@@ -219,7 +219,7 @@ result=$(run_command "Test (Model Inference)" \
 TEST_TIME=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f1)
 TEST_MEMORY=$(echo "$result" | grep "RUN_COMMAND_RESULT:" | tail -1 | cut -d':' -f2- | cut -d'|' -f2)
 
-# ========== 最终汇总 ==========
+# ========== Final Summary ==========
 TOTAL_END_TIME=$(date +%s.%N)
 TOTAL_TIME=$(echo "$TOTAL_END_TIME $TOTAL_START_TIME" | awk '{printf "%.4f", $1 - $2}')
 
@@ -242,7 +242,7 @@ printf "%-42s %-12s %-20s\n" "Part 21 (Derived Features)"         "${STEP21_TIME
 printf "%-42s %-12s %-20s\n" "Test    (Model Inference)"          "${TEST_TIME:-0}"     "${TEST_MEMORY:-N/A}"
 echo "------------------------------------------------------------"
 
-# 计算各部分时间之和
+# Calculate the sum of stage runtimes.
 PARTS_SUM=$(echo "${STEP1_TIME:-0} ${STEP2_TIME:-0} ${STEP3_TIME:-0} ${STEP4_TIME:-0} ${STEP5_TIME:-0} ${STEP6_TIME:-0} ${STEP7_TIME:-0} ${STEP8_TIME:-0} ${STEP9_TIME:-0} ${STEP21_TIME:-0} ${TEST_TIME:-0}" | awk '{printf "%.4f", $1+$2+$3+$4+$5+$6+$7+$8+$9+$10+$11}')
 
 echo "Sum of parts: ${PARTS_SUM} seconds"
@@ -250,9 +250,9 @@ echo "Total Time:   ${TOTAL_TIME} seconds"
 echo "End time: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "========================================"
 
-# 检查 /usr/bin/time 是否可用
+# Check whether /usr/bin/time is available.
 if ! command -v /usr/bin/time >/dev/null 2>&1; then
     echo ""
-    echo "注意: /usr/bin/time 不可用，内存测量不可用"
-    echo "如需内存测量，请安装: apt-get update && apt-get install -y time"
+    echo "Note: /usr/bin/time is unavailable; memory measurement is disabled"
+    echo "Install it with: apt-get update && apt-get install -y time"
 fi

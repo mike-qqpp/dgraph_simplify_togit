@@ -13,7 +13,7 @@ from tqdm import tqdm
 from sklearn.metrics import average_precision_score
 import time
 
-# ========= 核心交叉验证（内存精简版） =========
+# == sync, corrected by elderman == @elder man
 def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=None, folds=10, x_valid=None):
     infer_time_sum = 0
     seed = sd
@@ -35,11 +35,11 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
         trn_x, trn_y = train_x.iloc[tr_idx], train_y.iloc[tr_idx]
         val_x, val_y = train_x.iloc[va_idx], train_y.iloc[va_idx]
 
-        # ---- 1. LightGBM (优化版) ----
+        # - 1. LightGBM (optimization) -
         if clf_name == "lgb":
             import lightgbm as lgb
             
-            # 计算类别权重
+            # Calculate category weights
             from sklearn.utils.class_weight import compute_class_weight
             classes = np.unique(trn_y)
             class_weights = compute_class_weight('balanced', classes=classes, y=trn_y)
@@ -50,30 +50,30 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
             trn_data = lgb.Dataset(trn_x, label=trn_y, categorical_feature=categorical_feature, free_raw_data=False)
             val_data = lgb.Dataset(val_x, label=val_y, categorical_feature=categorical_feature, free_raw_data=False)
 
-            # 优化后的参数
+            # Optimized parameters
             params = {
                 'boosting_type': 'gbdt',
                 'objective': 'binary',
                 'metric': ['binary_error'],
                 
-                # 学习率和树结构
+                # Learning rate and tree structure
                 'learning_rate': 0.05,
                 'num_leaves': 63,
                 'max_depth': -1,
                 'min_child_samples': 20,
                 'min_child_weight': 0.001,
                 
-                # 正则化参数
+                # Regularize parameters
                 'reg_alpha': 0.1,
                 'reg_lambda': 0.1,
                 'feature_fraction': 0.8,
                 'bagging_fraction': 0.8,
                 'bagging_freq': 5,
                 
-                # 类别不平衡处理
+                # Treatment of category imbalances
                 'is_unbalance': True,
                 
-                # 性能优化
+                # Performance optimization
                 'n_jobs': -1,
                 'seed': 2022,
                 'verbose': -1,
@@ -101,7 +101,7 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
             if model.params.get('device') == 'gpu':
                 lgb.model_free(model)
 
-            # ---- 结果累加 + 指标 ----
+            # - Result cumulative + indicator -
             train[va_idx, 0] = 1 - val_pred
             train[va_idx, 1] = val_pred
             test[:, 0] += (1 - tst_pred) / folds
@@ -117,7 +117,7 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
             cv_f1.append(f1_score(true_binary, val_prd_lbl))
             print(f'  fold AUC: {cv_auc[-1]:.4f}  F1: {cv_f1[-1]:.4f}')
 
-            # ===== 内存清理 =====
+            # == sync, corrected by elderman == @elder man
             del trn_data, val_data, model, val_pred, tst_pred, vld_pred, fold_importance_df
 
         # ---- 2. XGBoost ----
@@ -147,7 +147,7 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
             })
             feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
 
-            # ---- 结果累加 + 指标 ----
+            # - Result cumulative + indicator -
             train[va_idx] = val_pred
             test += tst_pred / folds
             if vld_pred is not None:
@@ -160,7 +160,7 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
             cv_f1.append(f1_score(true_binary, val_prd_lbl))
             print(f'  fold AUC: {cv_auc[-1]:.4f}  F1: {cv_f1[-1]:.4f}')
 
-            # ===== 内存清理 =====
+            # == sync, corrected by elderman == @elder man
             del trn_data, val_data, tst_data, vld_data, model, val_pred, tst_pred, vld_pred, fold_importance_df
 
         # ---- 3. CatBoost ----
@@ -209,7 +209,7 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
             })
             feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
 
-            # ---- 结果累加 + 指标 ----
+            # - Result cumulative + indicator -
             train[va_idx] = val_pred
             test += tst_pred / folds
             if vld_pred is not None:
@@ -222,16 +222,16 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
             cv_f1.append(f1_score(true_binary, val_prd_lbl))
             print(f'  fold AUC: {cv_auc[-1]:.4f}  F1: {cv_f1[-1]:.4f}')
 
-            # ===== 内存清理 =====
+            # == sync, corrected by elderman == @elder man
             del train_pool, valid_pool, test_pool, vld_pool, model, val_pred, tst_pred, vld_pred, fold_importance_df
 
-        # ===== 公共清理 =====
+        # == sync, corrected by elderman == @elder man
         del trn_x, trn_y, val_x, val_y
         gc.collect()
         mem_end = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3
-        print(f'[Mem] 释放后 {mem_end:.2f} GiB  ↓ {mem_start - mem_end:.2f} GiB\n')
+        print(f'[Mem] After release {mem_end:.2f} GiB  ↓ {mem_start - mem_end:.2f} GiB\n')
 
-    # 最终统计
+    # Final statistics
     auc_mean, auc_std = np.mean(cv_auc), np.std(cv_auc)
     f1_mean, f1_std = np.mean(cv_f1), np.std(cv_f1)
     print('auc list is: ', cv_auc)
@@ -245,7 +245,7 @@ def cv_model(clf, train_x, train_y, test_x, clf_name, train_y_2, sd, cols_cat=No
         return train, valid, test, importance_summary, cv_auc, auc_mean, auc_std, cv_f1, f1_mean, f1_std
     return train, test, valid, None, cv_auc, auc_mean, auc_std, cv_f1, f1_mean, f1_std
 
-# ========= 三模型封装 =========
+# == sync, corrected by elderman ==
 def lgb_model(x_train, y_train, x_test, train_y_2, sd, cols_cat=None, folds=5, x_valid=None):
     return cv_model('lgb', x_train, y_train, x_test, "lgb", train_y_2, sd, cols_cat, folds=folds, x_valid=x_valid)
 
@@ -278,8 +278,8 @@ df_node_enhanced = pd.DataFrame(df_node_enhanced_np, columns = cols_keep)
 # In[9]:
 
 
-# 准备训练测试数据
-print("\n📋 准备训练测试数据...")
+# Prepare training test data
+print("Prepare training test data...")
 df_train = df_node_enhanced.iloc[train_mask, :].reset_index(drop=True)
 df_valid = df_node_enhanced.iloc[valid_mask, :].reset_index(drop=True)
 df_test = df_node_enhanced.iloc[test_mask, :].reset_index(drop=True)
@@ -288,7 +288,7 @@ del df_node_enhanced
 [gc.collect() for _ in range(5)]
 
 mem_gib = psutil.Process(os.getpid()).memory_info().rss / 1024**3
-print(f"当前进程物理内存: {mem_gib:.2f} GiB")
+print(f"Current Process Physical Memory: {mem_gib:.2f} GiB")
 
 
 # In[12]:
@@ -306,15 +306,13 @@ import pandas as pd
 import numpy as np
 
 def create_cross_features(df):
-    """
-    创建交叉特征和组合特征
-    输入: DataFrame (包含原始130个特征)
-    输出: DataFrame (新增30个组合特征), new_feature_list
-    """
+    """Create cross-cutting and grouping features
+Input: DataFrame (includes 130 original features)
+Output: DataFrame (with 30 additional combination features), new feature list"""
     result_df = df.copy()
     new_features = []
     
-    # 1. 风险特征组合
+    # 1. Group of risk features
     result_df['risk_nei_in_out_ratio'] = np.where(
         result_df['risk_nei_out_sum'] > 0,
         result_df['risk_nei_in_sum'] / (result_df['risk_nei_out_sum'] + 1e-6),
@@ -332,7 +330,7 @@ def create_cross_features(df):
     )
     new_features.append('risk_nei_mean_ratio')
     
-    # 2. 时间窗口特征组合
+    # 2. Time window feature combination
     result_df['td_ratio_15_7'] = np.where(
         result_df['td_in_7'] > 0,
         result_df['td_in_15'] / (result_df['td_in_7'] + 1e-6),
@@ -347,7 +345,7 @@ def create_cross_features(df):
     )
     new_features.append('td_type0_ratio_15_7')
     
-    # 3. 图结构层次特征
+    # 3. Features of structure levels
     result_df['hop_ratio_2hop_1hop_in_min'] = np.where(
         result_df['directed_1hop_in_f1_min'] > 0,
         result_df['directed_2hop_in_f1_min'] / (result_df['directed_1hop_in_f1_min'] + 1e-6),
@@ -362,7 +360,7 @@ def create_cross_features(df):
     )
     new_features.append('hop_ratio_2hop_1hop_out_min')
     
-    # 4. 有向与无向图特征对比
+    # 4. Retrospective versus no-directional features
     result_df['directed_undirected_min_ratio'] = np.where(
         result_df['undirected_1hop_f1_min'] > 0,
         result_df['directed_1hop_in_f1_min'] / (result_df['undirected_1hop_f1_min'] + 1e-6),
@@ -379,15 +377,15 @@ def create_cross_features(df):
 
     return result_df, new_features
 
-# 示例使用
-# 假设 df 是包含原始特征的数据框
+# Example used
+# Assume df is a data frame with original features
 # df, new_features = create_cross_features(df)
 
 
 # In[14]:
 
 
-# 使用示例:
+# Example:
 df_train, new_features = create_cross_features(df_train)
 df_valid, _ = create_cross_features(df_valid)
 df_test, _ = create_cross_features(df_test)
@@ -427,7 +425,7 @@ stack_test = cab_test[:, 1]
 auc_test = roc_auc_score(y_test, stack_test)
 
 ap_train = average_precision_score(y_train, stack_train)
-ap_valid = average_precision_score(y_valid, stack_valid)  # 修正：使用y_valid
+ap_valid = average_precision_score(y_valid, stack_valid)  # Amendments: use y valid
 ap_test = average_precision_score(y_test, stack_test)
 
 print(f"Train - AUC: {auc_train:.4f}, AP: {ap_train:.4f}")
@@ -436,8 +434,6 @@ print(f"Test  - AUC: {auc_test:.4f}, AP: {ap_test:.4f}")
 
 
 # In[ ]:
-
-
 
 
 

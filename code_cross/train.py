@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-训练脚本 - 使用5折交叉验证训练CatBoost模型
-功能：
-1. 加载训练数据
-2. 创建交叉特征
-3. 进行5折交叉验证训练
-4. 保存5折模型
+"""Script training - training CatBoost model using a 50-percent cross-validation
+Function:
+Load training data
+2. Creation of cross-cutting features
+3. Conduct of a 50-percent cross-validation training
+4. Preservation of the 50-percent model
 
-使用方法:
-python train.py --dataset amazon
-或
-python train.py -d amazon
-"""
+Usage method:
+I don't know.
+or
+I don't know."""
 
 import numpy as np
 import pandas as pd
@@ -27,17 +25,17 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import roc_auc_score, f1_score, average_precision_score
 import time
 
-# ============== 配置参数 ==============
-# 这些将根据命令行参数设置
-DATA_DIR = None  # 将根据数据集名称设置
-LABEL_FILE = None  # 将根据数据集名称设置
-OUTPUT_DIR = None  # 将根据数据集名称设置
-DATASET_NAME = None  # 数据集名称
+# == sync, corrected by elderman == @elder man
+# These will be set according to the command line parameters.
+DATA_DIR = None  # Set according to the data set name
+LABEL_FILE = None  # Set according to the data set name
+OUTPUT_DIR = None  # Set according to the data set name
+DATASET_NAME = None  # Data set name
 
 N_FOLDS = 5
 RANDOM_SEED = 2022
 
-# ============== 用户指定的特征列 ==============
+# == sync, corrected by elderman == @elder man
 def get_COLS_KEEP(dataset):
     if dataset=='amazon':
         COLS_FEA_SLC = [
@@ -94,35 +92,35 @@ def get_COLS_KEEP(dataset):
     COLS_KEEP = ['label'] + COLS_FEA_SLC
     return COLS_KEEP
 
-# ============== 命令行参数解析 ==============
+# == sync, corrected by elderman == @elder man
 def parse_args():
-    """解析命令行参数"""
-    parser = argparse.ArgumentParser(description='训练CatBoost模型')
+    """Parsing command line parameters"""
+    parser = argparse.ArgumentParser(description='Train CatBoost model')
     parser.add_argument('--dataset', '-d', type=str, required=True,
-                       help='数据集名称 (如: amazon)')
+                       help='Data set name (e.g. amazon)')
     parser.add_argument('--data_dir', type=str, default='../feature_split',
-                       help='特征数据目录 (默认: ../feature_split)')
+                       help='Feature Data Directory (default: ./feature spit)')
     parser.add_argument('--data_split_dir', type=str, default='../data_split',
-                       help='数据分割目录 (默认: ../data_split)')
+                       help='Data Split Directory (default: ./data spit)')
     parser.add_argument('--output_dir', type=str, default='./models',
-                       help='模型输出目录 (默认: ./models)')
+                       help='Model Output Directory (default: ./models)')
     parser.add_argument('--n_folds', type=int, default=5,
-                       help='交叉验证折数 (默认: 5)')
+                       help='Cross-validation discount (default: 5)')
     parser.add_argument('--seed', type=int, default=2022,
-                       help='随机种子 (默认: 2022)')
+                       help='Random Feed (default: 2022)')
     
     args = parser.parse_args()
     return args
 
 
-# ============== 数据加载函数 ==============
+# == sync, corrected by elderman == @elder man
 def load_train_data(data_dir, label_file, dataset_name):
-    """加载训练数据和标签"""
+    """Load training data and labels"""
     print("=" * 60)
-    print(f"加载训练数据 - 数据集: {dataset_name}")
+    print(f"Load training data - dataset: {dataset_name}")
     print("=" * 60)
     
-    # 加载所有pkl文件
+    # Load all pkl files
     df_node = pd.read_pickle(os.path.join(data_dir, 'df_node_enhanced_mk.pkl'))
     feature_new = pd.read_pickle(os.path.join(data_dir, 'feature_new.pkl'))
     feature_null = pd.read_pickle(os.path.join(data_dir, 'feature_null.pkl'))
@@ -131,19 +129,19 @@ def load_train_data(data_dir, label_file, dataset_name):
     print(f"  feature_new: {feature_new.shape}")
     print(f"  feature_null: {feature_null.shape}")
     
-    # 合并特征前，先检测各文件间的重复列
+    # Before combining features, detect duplicate columns between files
     all_dfs = [df_node, feature_new, feature_null]
     df_names = ['df_node', 'feature_new', 'feature_null']
     
-    print("\n  检测各数据文件间的重复列...")
+    print("\\n Test duplicate columns between data files...")
     
-    # 检查每个文件是否有重复列
+    # Check for duplicate columns for each file
     for name, df in zip(df_names, all_dfs):
         duplicate_cols = df.columns[df.columns.duplicated()].tolist()
         if duplicate_cols:
-            print(f"    ⚠️ {name} 内部有重复列: {duplicate_cols[:5]}...")
+            print(f"    ⚠️ {name} There's a repeat column inside.: {duplicate_cols[:5]}...")
     
-    # 检查文件间的重复列
+    # Check repeat columns between files
     all_columns = []
     for name, df in zip(df_names, all_dfs):
         all_columns.extend([(col, name) for col in df.columns])
@@ -153,23 +151,23 @@ def load_train_data(data_dir, label_file, dataset_name):
     inter_file_duplicates = {col: count for col, count in col_counter.items() if count > 1}
     
     if inter_file_duplicates:
-        print(f"    ⚠️ 文件间重复列: {list(inter_file_duplicates.keys())[:10]}...")
-        print(f"    共发现 {len(inter_file_duplicates)} 个文件间重复列")
+        print(f"    ⚠️ Repeat columns between files: {list(inter_file_duplicates.keys())[:10]}...")
+        print(f"    Discovery {len(inter_file_duplicates)} Repeat columns between files")
     else:
-        print("    ✓ 文件间无重复列")
+        print("No repetition column between files")
     
-    # 合并特征
+    # Merge Features
     df_train = pd.concat(all_dfs, axis=1)
     
-    print(f"\n  合并后特征数据: {df_train.shape}")
+    print(f"\n  Merged Feature Data: {df_train.shape}")
     
-    # 检测合并后的重复列
+    # Test the merged repeat column
     duplicate_cols_after = df_train.columns[df_train.columns.duplicated()].tolist()
     if duplicate_cols_after:
-        print(f"  ⚠️ 合并后DataFrame有 {len(duplicate_cols_after)} 个重复列: {duplicate_cols_after[:10]}...")
+        print(f"  ⚠️ After MergeDataFrameYeah. {len(duplicate_cols_after)} Repeat Columns: {duplicate_cols_after[:10]}...")
         
-        # 解决方案：为重复列添加后缀
-        print("  正在处理重复列...")
+        # Solutions: Add suffix for repeat columns
+        print("Processing duplicate columns...")
         new_columns = []
         col_count = {}
         for col in df_train.columns:
@@ -181,95 +179,93 @@ def load_train_data(data_dir, label_file, dataset_name):
                 new_col = col
             new_columns.append(new_col)
         df_train.columns = new_columns
-        print(f"  ✓ 已处理重复列，最终列数: {len(df_train.columns)}")
+        print(f"  ✓ Repeated columns processed，Final Columns: {len(df_train.columns)}")
     else:
-        print(f"  ✓ 合并后DataFrame无重复列")
+        print(f"  ✓ After MergeDataFrameNo Repeat Row")
     
-    # 从npz文件加载标签
-    print(f"\n加载标签数据: {label_file}")
+    # Load tabs from npz file
+    print(f"\nLoad Tab Data: {label_file}")
     label_np = np.load(label_file)
     labels = label_np['y']
-    print(f"  标签数据形状: {labels.shape}")
-    print(f"  正样本数量: {labels.sum()}")
-    print(f"  正样本比例: {labels.mean():.4f}")
+    print(f"  Tab Data Shape: {labels.shape}")
+    print(f"  Number of positive samples: {labels.sum()}")
+    print(f"  Positive sample ratio: {labels.mean():.4f}")
     
-    # 将标签添加到DataFrame
+    # Add Tab to DataFrame
     df_train['label'] = labels
     
-    print(f"  最终训练数据形状: {df_train.shape}")
+    print(f"  Final Training Data Shape: {df_train.shape}")
     
     return df_train
 
 
-# ============== 调试信息结束 ==============
+# == sync, corrected by elderman == @elder man
 def create_feature_safe(df, feature_name, expression, existing_set):
-    """安全创建特征，避免重复名称"""
+    """Secure creation features and avoid repetition of names"""
     if feature_name not in existing_set:
         df[feature_name] = expression
         existing_set.add(feature_name)
         return True
     else:
-        print(f"  跳过重复特征: {feature_name}")
+        print(f"  Skip repeat feature: {feature_name}")
         return False
 
-# ============== 交叉特征创建函数 ==============
+# == sync, corrected by elderman == @elder man
 def create_cross_features_amazon(df):
-    """
-    创建交叉组合特征（避免与现有特征名称重复）
-    返回: (包含新特征的数据框, 新特征名称列表)
-    """
+    """Create cross-group features (avoid duplication with existing feature names)
+Return: (data box with new features, list of new feature names)"""
     df = df.copy()
     new_features = []
     existing_features = set(df.columns.tolist())
     
-    # ============== 调试信息 ==============
+    # == sync, corrected by elderman == @elder man
     print("\n" + "=" * 60)
-    print("调试信息 - 检查现有特征")
+    print("Debug Information - Check Current Features")
     print("=" * 60)
 
-    # 时间相关的交叉特征
+    # Time-related cross-cutting features
     if 'fea_x_19' in existing_features and 'fea_x_12' in existing_features:
         if create_feature_safe(df, 'time_related_feature', 
                               df['fea_x_19'] * df['fea_x_12'], existing_features):
             new_features.append('time_related_feature')
     
-    # 图结构相关的交叉特征
+    # Cross-cutting features associated with the structure of the figure
     if 'fea_out_neighbor_fea_x_0_max' in existing_features and 'fea_out_neighbor_fea_x_7_max' in existing_features:
         if create_feature_safe(df, 'graph_structure_feature',
                               df['fea_out_neighbor_fea_x_0_max'] + df['fea_out_neighbor_fea_x_7_max'], existing_features):
             new_features.append('graph_structure_feature')
     
-    # 类型分布相关的交叉特征
+    # Cross-cutting features associated with type distribution
     if 'td_type_ratio_7d_1' in existing_features and 'td_type2_30' in existing_features:
         if create_feature_safe(df, 'type_distribution_feature',
                               df['td_type_ratio_7d_1'] * df['td_type2_30'], existing_features):
             new_features.append('type_distribution_feature')
     
-    # 边类型与时间间隔相关的交叉特征
+    # Cross feature of the border type associated with the time interval
     if 'fea_out_edge_type_mean' in existing_features and 'directed_1hop_in_type_0_count' in existing_features:
         if create_feature_safe(df, 'edge_type_time_interval_feature',
                               df['fea_out_edge_type_mean'] * df['directed_1hop_in_type_0_count'], existing_features):
             new_features.append('edge_type_time_interval_feature')
     
-    # 风险传播与图结构交叉特征
+    # Cross-cutting features of risk communication and chart structure
     if 'mixed_propagation_type_4_count' in existing_features and 'directed_1hop_out_type_4_count' in existing_features:
         if create_feature_safe(df, 'risk_propagation_feature',
                               df['mixed_propagation_type_4_count'] + df['directed_1hop_out_type_4_count'], existing_features):
             new_features.append('risk_propagation_feature')
     
-    # 多跳邻居行为对比特征
+    # I'm not sure I'm going to do it.
     if 'undirected_1hop_type_0_count' in existing_features and 'undirected_2hop_type_0_count' in existing_features:
         if create_feature_safe(df, 'hop_behavior_contrast',
                               df['undirected_1hop_type_0_count'] - df['undirected_2hop_type_0_count'], existing_features):
             new_features.append('hop_behavior_contrast')
     
-    # 业务特定的异常检测特征
+    # Operation-specific anomaly detection features
     if 'transaction_chain_f0_mean' in existing_features and 'directed_1hop_out_type_0_count' in existing_features:
         if create_feature_safe(df, 'business_specific_anomaly',
                               df['transaction_chain_f0_mean'] * df['directed_1hop_out_type_0_count'], existing_features):
             new_features.append('business_specific_anomaly')
     
-    # 基于分箱的交叉特征
+    # Based on the cross-cutting features of the box
     if 'fea_x_2' in existing_features:
         if create_feature_safe(df, 'fea_x_2_bin',
                               pd.cut(df['fea_x_2'], bins=[-2, -1, 0, 1, 3, 10, 112], labels=False), existing_features):
@@ -285,20 +281,20 @@ def create_cross_features_amazon(df):
                               df['fea_x_2_bin'] * df['fea_x_6_bin'], existing_features):
             new_features.append('bin_interaction')
     
-    # 统计量组合特征
+    # Statistical cluster features
     if 'undirected_1hop_f5_std' in existing_features and 'undirected_2hop_type_0_count' in existing_features:
         if create_feature_safe(df, 'statistical_combination',
                               df['undirected_1hop_f5_std'] + df['undirected_2hop_type_0_count'], existing_features):
             new_features.append('statistical_combination')
     
-    # 原始特征稳定性交叉特征
+    # Original identity stability cross-cutting feature
     if 'fea_x_2' in existing_features and 'fea_x_6' in existing_features:
         if create_feature_safe(df, 'feature_stability',
                               df['fea_x_2'] * df['fea_x_6'], existing_features):
             new_features.append('feature_stability')
     
-    print(f"  成功创建 {len(new_features)} 个交叉特征")
-    print(f"  新特征列表: {new_features}")
+    print(f"  Created successfully {len(new_features)} Cross-cutting features")
+    print(f"  New feature list: {new_features}")
     
     return df, new_features
 
@@ -306,82 +302,78 @@ def create_cross_features_amazon(df):
 import pandas as pd
 
 def create_cross_features_yelpchi(df):
-    """
-    创建交叉组合特征（严格仅使用top130特征）
-    返回: (包含新特征的数据框, 新特征名称列表)
-    """
+    """Create cross-assembly feature (strictly only Top130 feature)
+Return: (data box with new features, list of new feature names)"""
     df = df.copy()
     new_features = []
     
-    # 1. 时间特征与类型特征的交叉
+    # 1. Cross-cutting of time and type features
     if 'td_type_ratio_7d_1' in df.columns and 'td_type1_30' in df.columns:
         df['td_type_ratio_7d_1_td_type1_30'] = df['td_type_ratio_7d_1'] * df['td_type1_30']
         new_features.append('td_type_ratio_7d_1_td_type1_30')
     
-    # 2. 邻居特征的最大值与平均值的差
+    # 2. Maximum and average value of neighbourhood features Bad
     if 'fea_out_neighbor_fea_x_0_max' in df.columns and 'fea_out_neighbor_fea_x_0_mean' in df.columns:
         df['fea_out_neighbor_fea_x_0_diff'] = df['fea_out_neighbor_fea_x_0_max'] - df['fea_out_neighbor_fea_x_0_mean']
         new_features.append('fea_out_neighbor_fea_x_0_diff')
     
-    # 3. 特征的乘积
+    # 3. Product of features
     if 'fea_x_18' in df.columns and 'fea_x_19' in df.columns:
         df['fea_x_18_x_19_product'] = df['fea_x_18'] * df['fea_x_19']
         new_features.append('fea_x_18_x_19_product')
     
-    # 4. 风险传播特征的组合
+    # 4. Portfolio of risk transmission features
     if 'risk_nei_out_mean' in df.columns and 'risk_nei_in_mean' in df.columns:
         df['risk_nei_diff_mean'] = df['risk_nei_out_mean'] - df['risk_nei_in_mean']
         new_features.append('risk_nei_diff_mean')
     
-    # 5. 特征的和
+    # 5. Features and features
     if 'fea_x_13' in df.columns and 'fea_x_14' in df.columns:
         df['fea_x_13_x_14_sum'] = df['fea_x_13'] + df['fea_x_14']
         new_features.append('fea_x_13_x_14_sum')
     
-    # 6. 邻居统计特征组合
+    # 6. Neighbourly statistical profiles
     if 'fea_out_neighbor_fea_x_1_mean' in df.columns and 'fea_out_neighbor_fea_x_1_max' in df.columns:
         df['fea_out_neighbor_x_1_mean_max_ratio'] = df['fea_out_neighbor_fea_x_1_mean'] / (df['fea_out_neighbor_fea_x_1_max'] + 1e-6)
         new_features.append('fea_out_neighbor_x_1_mean_max_ratio')
     
-    # 7. 时间窗口特征交互
+    # 7. Time window characterization interaction
     if 'td_type1_15' in df.columns and 'td_type1_7' in df.columns:
         df['td_type1_15_7_diff'] = df['td_type1_15'] - df['td_type1_7']
         new_features.append('td_type1_15_7_diff')
     
-    # 8. 图传播特征的聚合
+    # 8. Convergence of image dissemination features
     if 'directed_1hop_in_f0_mean' in df.columns and 'directed_1hop_out_f0_mean' in df.columns:
         df['directed_1hop_in_out_ratio'] = df['directed_1hop_in_f0_mean'] / (df['directed_1hop_out_f0_mean'] + 1e-6)
         new_features.append('directed_1hop_in_out_ratio')
     
-    # 9. 多跳特征对比
+    # 9. Multiple-jump feature comparisons
     if 'directed_2hop_in_f0_mean' in df.columns and 'directed_1hop_in_f0_mean' in df.columns:
         df['directed_2hop_1hop_in_ratio'] = df['directed_2hop_in_f0_mean'] / (df['directed_1hop_in_f0_mean'] + 1e-6)
         new_features.append('directed_2hop_1hop_in_ratio')
     
-    # 10. 风险总和特征
+    # 10. Total risk features
     if 'risk_nei_out_sum' in df.columns and 'risk_nei_in_sum' in df.columns:
         df['risk_nei_total_sum'] = df['risk_nei_out_sum'] + df['risk_nei_in_sum']
         new_features.append('risk_nei_total_sum')
     
-    # 确保只返回最多30个新特征
+    # Ensure that only 30 new features are returned
     if len(new_features) > 30:
         new_features = new_features[:30]
     
-    print(f"成功创建 {len(new_features)} 个交叉特征")
-    print("新特征列表:", new_features)
+    print(f"Created successfully {len(new_features)} Cross-cutting features")
+    print("New feature list:", new_features)
     
     return df, new_features
 
 def create_cross_features_tfinance(df):
-    """
-    创建交叉特征和组合特征
-    输入: DataFrame (包含原始130个特征)
-    输出: DataFrame (新增30个组合特征), new_feature_list
-    """
+    """Create cross-cutting and grouping features
+Input: DataFrame (includes 130 original features)
+Output: DataFrame (with 30 additional combination features), new feature list"""
     result_df = df.copy()
     new_features = []
     
-    # 1. 风险特征组合
+    # 1. Group of risk features
     result_df['risk_nei_in_out_ratio'] = np.where(
         result_df['risk_nei_out_sum'] > 0,
         result_df['risk_nei_in_sum'] / (result_df['risk_nei_out_sum'] + 1e-6),
@@ -399,7 +391,7 @@ def create_cross_features_tfinance(df):
     )
     new_features.append('risk_nei_mean_ratio')
     
-    # 2. 时间窗口特征组合
+    # 2. Time window feature combination
     result_df['td_ratio_15_7'] = np.where(
         result_df['td_in_7'] > 0,
         result_df['td_in_15'] / (result_df['td_in_7'] + 1e-6),
@@ -414,7 +406,7 @@ def create_cross_features_tfinance(df):
     )
     new_features.append('td_type0_ratio_15_7')
     
-    # 3. 图结构层次特征
+    # 3. Features of structure levels
     result_df['hop_ratio_2hop_1hop_in_min'] = np.where(
         result_df['directed_1hop_in_f1_min'] > 0,
         result_df['directed_2hop_in_f1_min'] / (result_df['directed_1hop_in_f1_min'] + 1e-6),
@@ -429,7 +421,7 @@ def create_cross_features_tfinance(df):
     )
     new_features.append('hop_ratio_2hop_1hop_out_min')
     
-    # 4. 有向与无向图特征对比
+    # 4. Retrospective versus no-directional features
     result_df['directed_undirected_min_ratio'] = np.where(
         result_df['undirected_1hop_f1_min'] > 0,
         result_df['directed_1hop_in_f1_min'] / (result_df['undirected_1hop_f1_min'] + 1e-6),
@@ -448,15 +440,13 @@ def create_cross_features_tfinance(df):
 
 
 def create_cross_features_dgraphfin(df):
-    """
-    基于特征重要性排序创建16个精炼交叉特征
-    特征重要性：越靠前的特征越重要
-    返回: (包含新特征的数据框, 新特征名称列表)
-    """
+    """Create 16 refined cross-cutting features based on the importance of character ranking
+The importance of identity: the importance of the features ahead
+Return: (data box with new features, list of new feature names)"""
     df = df.copy()
     new_features = []
     
-    # 只取前20个最重要的特征进行组合（基于提供的排序）
+    # Only the top 20 most important features are combined (based on the ranking provided)
     top_features = [
         'fea_x_2', 'last_active_out', 'undirected_1hop_timestamp_min', 'fea_x_11',
         'undirected_1hop_f16_max', 'directed_1hop_out_timestamp_max', 'fea_x_6',
@@ -465,94 +455,94 @@ def create_cross_features_dgraphfin(df):
         'directed_1hop_out_interval_std', 'fea_out_edge_type_max', 'fea_x_15', 'fea_x_8'
     ]
     
-    # 1. 核心时间窗口分析：最后活跃时间与最早交易时间的间隔
+    # Core time window analysis: interval between last active time and earliest transaction time
     if 'last_active_out' in df.columns and 'undirected_1hop_timestamp_min' in df.columns:
         df['active_window_span'] = df['last_active_out'] - df['undirected_1hop_timestamp_min']
         new_features.append('active_window_span')
     
-    # 2. 高风险交易密度：最大交易额与时间跨度的比值
+    # 2. High-risk transaction density: ratio of maximum transaction value to time span
     if 'undirected_1hop_f16_max' in df.columns and 'directed_1hop_out_timestamp_range' in df.columns:
         df['risk_transaction_density'] = df['undirected_1hop_f16_max'] / (df['directed_1hop_out_timestamp_range'] + 1e-6)
         new_features.append('risk_transaction_density')
     
-    # 3. 近期突击性交易：最后活跃时间很近 + 交易额巨大
+    # 3. Recent surprise trading: the last active time is close + the value of the transaction is huge
     if 'last_active_out' in df.columns and 'undirected_1hop_f16_max' in df.columns:
         df['recent_burst_risk'] = (1 / (df['last_active_out'] + 1)) * df['undirected_1hop_f16_max']
         new_features.append('recent_burst_risk')
     
-    # 4. 交易时间异常：出账时间范围异常 + 交易间隔不稳定
+    # 4. Transaction time anomalies: unusual time frames for the disbursement of accounts + unstable transaction intervals
     if 'directed_1hop_out_timestamp_range' in df.columns and 'directed_1hop_out_interval_std' in df.columns:
         df['timing_anomaly_score'] = df['directed_1hop_out_timestamp_range'] * df['directed_1hop_out_interval_std']
         new_features.append('timing_anomaly_score')
     
-    # 5. 核心特征组合：最重要的3个特征x的交互
+    # 5. Core identity mix: interaction of the three most important features x
     if all(f in df.columns for f in ['fea_x_2', 'fea_x_11', 'fea_x_6']):
         df['core_feature_interaction'] = df['fea_x_2'] * df['fea_x_11'] / (np.abs(df['fea_x_6']) + 1e-6)
         new_features.append('core_feature_interaction')
     
-    # 6. 账户不活跃风险：不活跃天数与交易额的异常组合
+    # 6. Account inactivity risk: abnormal combination of inactive days and transaction amounts
     if 'inactive_days_out' in df.columns and 'undirected_1hop_f15_max' in df.columns:
         df['dormant_high_value_risk'] = df['inactive_days_out'] * df['undirected_1hop_f15_max']
         new_features.append('dormant_high_value_risk')
     
-    # 7. 交易时间集中度：出账时间最小值和最大值的相对关系
+    # 7. Transaction time concentration: the relationship between the minimum and maximum value at the time of payment
     if 'directed_1hop_out_timestamp_min' in df.columns and 'directed_1hop_out_timestamp_max' in df.columns:
         df['out_timestamp_concentration'] = 1 / (df['directed_1hop_out_timestamp_max'] - df['directed_1hop_out_timestamp_min'] + 1)
         new_features.append('out_timestamp_concentration')
     
-    # 8. 边类型异常：均值与最大值的差异
+    # 8. Edge type anomalies: difference between average and maximum
     if 'fea_out_edge_type_mean' in df.columns and 'fea_out_edge_type_max' in df.columns:
         df['edge_type_discrepancy'] = df['fea_out_edge_type_max'] - df['fea_out_edge_type_mean']
         new_features.append('edge_type_discrepancy')
     
-    # 9. 时间戳最小值异常：最早交易时间的异常模式
+    # 9. Minimum time stamp abnormal: unusual pattern of the earliest transaction time
     if 'undirected_1hop_timestamp_min' in df.columns and 'directed_1hop_out_timestamp_min' in df.columns:
         df['first_interaction_gap'] = df['directed_1hop_out_timestamp_min'] - df['undirected_1hop_timestamp_min']
         new_features.append('first_interaction_gap')
     
-    # 10. 特征x的加权组合：基于重要性排序的权重
+    # 10. Weighted combination of feature x: weights based on ranking of importance
     if all(f in df.columns for f in ['fea_x_2', 'fea_x_1', 'fea_x_0', 'fea_x_15', 'fea_x_8']):
-        # 权重分配：重要性越高的特征权重越大
+        # Distribution of weights: the more important the weight of features
         df['weighted_x_features'] = (df['fea_x_2'] * 0.35 + df['fea_x_1'] * 0.25 + 
                                     df['fea_x_0'] * 0.20 + df['fea_x_15'] * 0.15 + 
                                     df['fea_x_8'] * 0.05)
         new_features.append('weighted_x_features')
     
-    # 11. 交易稳定性评分：时间范围与间隔稳定性的综合
+    # 11. Transaction stability rating: a combination of time-frame and interval stability
     if 'directed_1hop_out_timestamp_range' in df.columns and 'directed_1hop_out_interval_std' in df.columns:
         df['transaction_stability'] = 1 / (df['directed_1hop_out_timestamp_range'] * df['directed_1hop_out_interval_std'] + 1)
         new_features.append('transaction_stability')
     
-    # 12. 高频风险交易：时间跨度小但交易额大
+    # 12. High-frequency risk trading: small time horizon but high transaction value
     if 'directed_1hop_out_timestamp_range' in df.columns and 'undirected_1hop_f16_max' in df.columns:
         df['high_freq_high_value'] = df['undirected_1hop_f16_max'] / (np.log1p(df['directed_1hop_out_timestamp_range']) + 1)
         new_features.append('high_freq_high_value')
     
-    # 13. 账户活性异常：最后活跃与不活跃天数的矛盾
+    # 13. Account activity anomalies: conflict between last active and inactive days
     if 'last_active_out' in df.columns and 'inactive_days_out' in df.columns:
         df['activity_inconsistency'] = df['last_active_out'] * df['inactive_days_out']
         new_features.append('activity_inconsistency')
     
-    # 14. 时间模式异常：最早交易时间与出账时间范围的交互
+    # 14. Anomalous time patterns: interaction between the earliest transaction time and the time frame for the disbursement of accounts
     if 'undirected_1hop_timestamp_min' in df.columns and 'directed_1hop_out_timestamp_range' in df.columns:
         df['early_wide_spread_risk'] = df['undirected_1hop_timestamp_min'] * np.log1p(df['directed_1hop_out_timestamp_range'])
         new_features.append('early_wide_spread_risk')
     
-    # 15. 多重风险叠加：结合多个最重要特征的异常模式
+    # 15. Multiple risk overlaps: abnormal patterns combining the most important features
     if all(f in df.columns for f in ['fea_x_2', 'last_active_out', 'undirected_1hop_f16_max']):
         df['multi_risk_composite'] = (df['fea_x_2'] * (1 / (df['last_active_out'] + 1)) * 
                                      np.log1p(df['undirected_1hop_f16_max']))
         new_features.append('multi_risk_composite')
     
-    # 16. 核心时间特征交互：最重要时间特征的组合
+    # 16. Core time features interactive: a combination of the most important time features
     if all(f in df.columns for f in ['last_active_out', 'undirected_1hop_timestamp_min', 'directed_1hop_out_timestamp_max']):
         df['core_time_interaction'] = (df['last_active_out'] - df['undirected_1hop_timestamp_min']) * \
                                      (1 / (df['directed_1hop_out_timestamp_max'] - df['undirected_1hop_timestamp_min'] + 1))
         new_features.append('core_time_interaction')
     
-    # 确保正好16个特征
+    # Make sure it happens to be 16.
     if len(new_features) > 16:
-        # 保留前16个特征（按定义的顺序）
+        # Retain the first 16 features (in order of definition)
         features_to_keep = new_features[:16]
         features_to_remove = new_features[16:]
         
@@ -562,8 +552,8 @@ def create_cross_features_dgraphfin(df):
         
         new_features = features_to_keep
     
-    print(f"基于重要性排序创建 {len(new_features)} 个精炼交叉特征")
-    print("新特征列表（基于重要性前20的特征组合）:")
+    print(f"Create Based on Importance Sorting {len(new_features)} A precise cross-cutting feature")
+    print("New feature list (based on pre-material 20 feature combinations):")
     for i, feat in enumerate(new_features, 1):
         print(f"{i:2d}. {feat}")
     
@@ -582,57 +572,55 @@ def create_cross_features(df_, dataname_):
     
 
 
-# ============== 5折交叉验证训练 ==============
+# == sync, corrected by elderman == @elder man
 def train_with_cv(df_train, cols_fea, new_features, output_dir, dataset_name, n_folds=5, random_seed=2022):
-    """
-    使用5折交叉验证训练CatBoost模型
-    
-    返回:
-        - oof_pred: Out-of-Fold预测结果
-        - models: 5折模型的列表
-        - cv_metrics: 交叉验证指标
-        - cols_fea_cross: 使用的特征列
-    """
+    """Training CatBoost model using a 50-percent cross-validation
+
+Return:
+- oof pred: Out-of-Fold forecast results
+- Moders: list of 50% off model
+-cv Metrics: cross-validation of indicators
+- features fea crosss:"""
     print("\n" + "=" * 60)
-    print(f"开始{n_folds}折交叉验证训练 - 数据集: {dataset_name}")
+    print(f"Start{n_folds}Cross-check training - dataset: {dataset_name}")
     print("=" * 60)
     
-    # 准备特征和标签（避免重复特征）
+    # Preparation features and labels (duplication of duplicate features)
     print("\n" + "=" * 60)
-    print("准备特征和标签...")
+    print("Prepare features and labels...")
     print("=" * 60)
     
-    # 检测 cols_fea 和 new_features 之间的重复
+    # Detecting duplicates between cols fea and new features
     cols_fea_set = set(cols_fea)
     duplicate_features = [f for f in new_features if f in cols_fea_set]
     if duplicate_features:
-        print(f"  ⚠️ 发现 {len(duplicate_features)} 个特征在 cols_fea 中已存在: {duplicate_features[:10]}...")
+        print(f"  ⚠️ Found {len(duplicate_features)} A signature in cols_fea Existing: {duplicate_features[:10]}...")
     
-    # 只添加不重复的新特征
+    # Add only new features without repetition
     new_features_unique = [f for f in new_features if f not in cols_fea_set]
-    print(f"  new_features 原始数量: {len(new_features)}")
-    print(f"  new_features 去重后数量: {len(new_features_unique)}")
+    print(f"  new_features Original Number: {len(new_features)}")
+    print(f"  new_features We're going to reload.: {len(new_features_unique)}")
     
-    # 合并特征列表
+    # Merge feature list
     cols_fea_cross = cols_fea + new_features_unique
-    print(f"  最终特征数量: {len(cols_fea_cross)}")
+    print(f"  Number of final features: {len(cols_fea_cross)}")
     
-    # 再次检测最终列表中的重复
+    # Repeat to detect repetition in final list
     from collections import Counter
     final_col_counts = Counter(cols_fea_cross)
     final_duplicates = {col: count for col, count in final_col_counts.items() if count > 1}
     if final_duplicates:
-        print(f"  ⚠️ 最终特征列表仍有重复: {final_duplicates}")
+        print(f"  ⚠️ The final feature list is still duplicated: {final_duplicates}")
     else:
-        print(f"  ✓ 最终特征列表无重复")
+        print(f"  ✓ Final feature list does not repeat")
     
     x_train = df_train[cols_fea_cross].reset_index(drop=True)
     y_train = df_train['label'].reset_index(drop=True)
     
-    print(f"\n训练样本数: {len(x_train)}")
-    print(f"正样本比例: {y_train.mean():.4f}")
+    print(f"\nNumber of training samples: {len(x_train)}")
+    print(f"Positive sample ratio: {y_train.mean():.4f}")
     
-    # 初始化
+    # Initialize
     kf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_seed)
     oof_pred = np.zeros((len(x_train), 2))
     models = []
@@ -640,24 +628,24 @@ def train_with_cv(df_train, cols_fea, new_features, output_dir, dataset_name, n_
     cv_f1 = []
     
     mem_start = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3
-    print(f"\n初始内存: {mem_start:.2f} GiB")
+    print(f"\nInitial Memory: {mem_start:.2f} GiB")
     
     for fold, (tr_idx, va_idx) in enumerate(kf.split(x_train, y_train)):
         print(f"\n{'='*60}")
         print(f"Fold {fold + 1}/{n_folds}")
         print(f"{'='*60}")
         
-        # 分割数据
+        # Split Data
         trn_x, trn_y = x_train.iloc[tr_idx], y_train.iloc[tr_idx]
         val_x, val_y = x_train.iloc[va_idx], y_train.iloc[va_idx]
         
-        print(f"  训练集: {len(trn_x)}, 验证集: {len(val_x)}")
+        print(f"  Training Set: {len(trn_x)}, Authentication Set: {len(val_x)}")
         
-        # 创建Pool对象
+        # Create Pool Object
         train_pool = Pool(trn_x, label=trn_y)
         valid_pool = Pool(val_x, label=val_y)
         
-        # CatBoost模型配置
+        # CatBoost model configuration
         model = CatBoostClassifier(
             iterations=2500,
             learning_rate=0.06,
@@ -678,15 +666,15 @@ def train_with_cv(df_train, cols_fea, new_features, output_dir, dataset_name, n_
             random_seed=random_seed
         )
         
-        # 训练模型
-        print(f"\n  开始训练 Fold {fold + 1}...")
+        # Training model
+        print(f"\n  Start training. Fold {fold + 1}...")
         model.fit(train_pool, eval_set=valid_pool, use_best_model=True)
         
-        # 验证集预测
+        # Validation set projections
         val_pred = model.predict_proba(val_x)
         oof_pred[va_idx] = val_pred
         
-        # 计算验证集指标
+        # Calculate validation set indicators
         val_pos_prob = val_pred[:, 1]
         val_prd_lbl = (val_pos_prob > 0.5).astype(int)
         true_binary = (val_y == 1).astype(int)
@@ -698,31 +686,31 @@ def train_with_cv(df_train, cols_fea, new_features, output_dir, dataset_name, n_
         
         print(f"\n  Fold {fold + 1} - AUC: {fold_auc:.4f}, F1: {fold_f1:.4f}")
         
-        # 保存模型
+        # Save Model
         model_path = os.path.join(output_dir, f'catboost_fold_{fold + 1}.cbm')
         model.save_model(model_path)
         models.append(model)
-        print(f"  模型已保存: {model_path}")
+        print(f"  Model saved: {model_path}")
         
-        # 内存清理
+        # Memory Clearing
         del train_pool, valid_pool, model, val_pred, trn_x, trn_y, val_x, val_y
         gc.collect()
         
         mem_current = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 3
-        print(f"  内存使用: {mem_current:.2f} GiB")
+        print(f"  Memory Usage: {mem_current:.2f} GiB")
     
-    # 计算总体OOF指标
+    # Calculate overall OOF indicators
     oof_pos_prob = oof_pred[:, 1]
     oof_prd_lbl = (oof_pos_prob > 0.5).astype(int)
     oof_auc = roc_auc_score(y_train, oof_pos_prob)
     oof_f1 = f1_score(y_train, oof_prd_lbl)
     
     print("\n" + "=" * 60)
-    print("交叉验证结果汇总")
+    print("Summary of cross-validation results")
     print("=" * 60)
-    print(f"各折AUC: {[f'{auc:.4f}' for auc in cv_auc]}")
+    print(f"DeclinesAUC: {[f'{auc:.4f}' for auc in cv_auc]}")
     print(f"AUC Mean ± Std: {np.mean(cv_auc):.4f} ± {np.std(cv_auc):.4f}")
-    print(f"各折F1: {[f'{f1:.4f}' for f1 in cv_f1]}")
+    print(f"DeclinesF1: {[f'{f1:.4f}' for f1 in cv_f1]}")
     print(f"F1 Mean ± Std: {np.mean(cv_f1):.4f} ± {np.std(cv_f1):.4f}")
     print(f"OOF AUC: {oof_auc:.4f}")
     print(f"OOF F1: {oof_f1:.4f}")
@@ -741,12 +729,12 @@ def train_with_cv(df_train, cols_fea, new_features, output_dir, dataset_name, n_
     return oof_pred, cv_metrics, models, cols_fea_cross
 
 
-# ============== 主函数 ==============
+# == sync, corrected by elderman == @elder man
 def main():
-    # 解析命令行参数
+    # Parsing command line parameters
     args = parse_args()
     
-    # 设置全局变量
+    # Set global variables
     global DATASET_NAME, DATA_DIR, LABEL_FILE, OUTPUT_DIR, N_FOLDS, RANDOM_SEED
     
     DATASET_NAME = args.dataset
@@ -757,52 +745,52 @@ def main():
     RANDOM_SEED = args.seed
     
     print("\n" + "=" * 60)
-    print(f"CatBoost {N_FOLDS}折交叉验证训练")
-    print(f"数据集: {DATASET_NAME}")
+    print(f"CatBoost {N_FOLDS}Cross-check training")
+    print(f"dataset: {DATASET_NAME}")
     print("=" * 60)
-    print(f"特征目录: {DATA_DIR}")
-    print(f"标签文件: {LABEL_FILE}")
-    print(f"输出目录: {OUTPUT_DIR}")
-    print(f"交叉验证折数: {N_FOLDS}")
-    print(f"随机种子: {RANDOM_SEED}")
+    print(f"Identity Directory: {DATA_DIR}")
+    print(f"Tag File: {LABEL_FILE}")
+    print(f"Output Directory: {OUTPUT_DIR}")
+    print(f"Cross-validation discounts: {N_FOLDS}")
+    print(f"Random Feeds: {RANDOM_SEED}")
     print("=" * 60)
     
-    # 确保输出目录存在
+    # Ensure that the output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     
-    # 1. 加载训练数据和标签
+    # 1. Load training data and labelling
     df_train = load_train_data(DATA_DIR, LABEL_FILE, DATASET_NAME)
     
-    # 2. 先根据用户指定的列筛选特征
+    # 2. Screening features based on columns specified by the user
     print("\n" + "=" * 60)
-    print("根据用户指定的列筛选特征...")
+    print("Filter feature by column specified by user...")
     print("=" * 60)
 
     COLS_KEEP = get_COLS_KEEP(DATASET_NAME)
 
     
-    # 检查哪些指定的列存在于数据中
+    # Check which specified columns exist in the data
     available_cols = [col for col in COLS_KEEP if col in df_train.columns]
     missing_cols = [col for col in COLS_KEEP if col not in df_train.columns]
     
-    print(f"  用户指定列数: {len(COLS_KEEP)}")
-    print(f"  实际可用列数: {len(available_cols)}")
+    print(f"  User-Specify Columns: {len(COLS_KEEP)}")
+    print(f"  Number of columns actually available: {len(available_cols)}")
     if missing_cols:
-        print(f"  ⚠️ 缺失的列: {missing_cols[:10]}...")
+        print(f"  ⚠️ Missing Columns: {missing_cols[:10]}...")
     
-    # 筛选数据框（只保留指定的列）
+    # Filter Data Box (only keep specified columns)
     df_train = df_train[available_cols].copy()
-    print(f"  筛选后数据形状: {df_train.shape}")
+    print(f"  Data shape after filtering: {df_train.shape}")
     
-    # 3. 创建交叉特征（在筛选后的特征基础上）
-    print("\n创建交叉特征...")
+    # 3. Create cross-cutting features (based on filtered features)
+    print("\\n Create Cross feature...")
     df_train, new_features = create_cross_features(df_train, DATASET_NAME)
     
-    # 4. 使用筛选后的特征列作为基础特征
+    # 4. Use of filtered feature columns as basic features
     cols_fea = [f for f in df_train.columns if f != 'label']
-    print(f"\n基础特征数量: {len(cols_fea)}")
+    print(f"\nNumber of basic features: {len(cols_fea)}")
     
-    # 5. 5折交叉验证训练
+    # 5. 50-percent cross-validation training
     oof_pred, cv_metrics, models, cols_fea_cross = train_with_cv(
         df_train, cols_fea, new_features, 
         output_dir=OUTPUT_DIR,
@@ -811,7 +799,7 @@ def main():
         random_seed=RANDOM_SEED
     )
     
-    # 6. 保存训练元数据
+    # 6. Preservation of training metadata
     metadata = {
         'dataset': DATASET_NAME,
         'cols_fea_cross': cols_fea_cross,
@@ -824,21 +812,21 @@ def main():
     metadata_path = os.path.join(OUTPUT_DIR, 'training_metadata.pkl')
     with open(metadata_path, 'wb') as f:
         pickle.dump(metadata, f)
-    print(f"\n训练元数据已保存: {metadata_path}")
+    print(f"\nTraining metadata saved: {metadata_path}")
     
-    # 7. 保存OOF预测
+    # 7. Preservation of OOF projections
     oof_path = os.path.join(OUTPUT_DIR, 'oof_predictions.npy')
     np.save(oof_path, oof_pred)
-    print(f"OOF预测结果已保存: {oof_path}")
+    print(f"OOFForecast results saved: {oof_path}")
     
     print("\n" + "=" * 60)
-    print("训练完成！")
+    print("Training complete!")
     print("=" * 60)
-    print(f"\n生成的文件:")
-    print(f"  - 模型文件: {OUTPUT_DIR}/catboost_fold_*.cbm")
-    print(f"  - 训练元数据: {OUTPUT_DIR}/training_metadata.pkl")
-    print(f"  - OOF预测: {OUTPUT_DIR}/oof_predictions.npy")
-    print(f"\n训练指标:")
+    print(f"\nFile Generation:")
+    print(f"  - Model File: {OUTPUT_DIR}/catboost_fold_*.cbm")
+    print(f"  - Training metadata: {OUTPUT_DIR}/training_metadata.pkl")
+    print(f"  - OOFprediction: {OUTPUT_DIR}/oof_predictions.npy")
+    print(f"\nTraining indicators:")
     print(f"  AUC: {cv_metrics['auc_mean']:.4f} ± {cv_metrics['auc_std']:.4f}")
     print(f"  F1: {cv_metrics['f1_mean']:.4f} ± {cv_metrics['f1_std']:.4f}")
 

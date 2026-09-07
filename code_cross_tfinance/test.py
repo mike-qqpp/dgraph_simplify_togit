@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-测试脚本 - 加载训练好的模型进行推理和评估
-支持多种数据集和模型类型
+"""Testing scripts - loading trained models for reasoning and evaluation
+Support multiple data sets and model types
 
-使用方法:
-python test.py --dataset tfinance --model cab
-或
-python test.py -d tfinance -m cab
-"""
+Usage method:
+I'm sorry, py-dataset tfinance-model cab.
+or
+I'm sorry, I'm sorry."""
 
 import os
 import argparse
@@ -245,194 +243,192 @@ def create_cross_features_yelpchi(df):
 
 
 def create_cross_features_tfinance(df):
-    """
-    创建有意义的交叉组合特征（基于特征的实际含义和业务逻辑）
-    返回: (包含新特征的数据框, 新特征名称列表)
-    """
+    """Creation of meaningful cross-cutting features (based on the actual meaning of features and business logic)
+Return: (data box with new features, list of new feature names)"""
     df = df.copy()
     new_features = []
     
-    # 1. 异常检测强度交叉特征（异常分数之间的相互作用）
+    # 1. Intersectional features of abnormality detection strength (interactivity between abnormal fractions)
     if 'lof_score' in df.columns and 'anomaly_score_max' in df.columns:
-        # LOF分数与最大异常分数的相互作用
+        # Interaction of LOF fractions with maximum abnormal fractions
         df['lof_anomaly_max_interaction'] = df['lof_score'] * df['anomaly_score_max']
         new_features.append('lof_anomaly_max_interaction')
     
     if 'combined_max_anomaly_score' in df.columns and 'anomaly_harmonic_lof_score_one_class_svm_score' in df.columns:
-        # 最大异常分数与调和异常分数的交叉
+        # Maximum abnormality fraction crosses the adjustment and abnormality fraction
         df['max_harmonic_anomaly_product'] = df['combined_max_anomaly_score'] * df['anomaly_harmonic_lof_score_one_class_svm_score']
         new_features.append('max_harmonic_anomaly_product')
     
-    # 2. 图结构与异常检测的交叉（图嵌入与异常分数的相互作用）
+    # 2. Cross-section of chart structure and anomaly detection (intersection of graph embedding and anomaly fractions)
     if 'gnn_embedding_dim0_exp' in df.columns and 'lof_score' in df.columns:
-        # 图嵌入与LOF分数的相互作用，可能捕获结构异常
+        # Figure embedded interaction with LOF fractions, possible capture structure anomalies
         df['graph_embedding_lof_interaction'] = df['gnn_embedding_dim0_exp'] * df['lof_score']
         new_features.append('graph_embedding_lof_interaction')
     
     if 'feature_embedding_dim1' in df.columns and 'important_ratio_feature_1_over_isolation_forest_score' in df.columns:
-        # 特征嵌入与异常检测比值的交叉
+        # The intersection of feature embedding with abnormality detection ratio
         df['embedding_anomaly_ratio_product'] = df['feature_embedding_dim1'] * df['important_ratio_feature_1_over_isolation_forest_score']
         new_features.append('embedding_anomaly_ratio_product')
     
-    # 3. 时间序列特征与统计特征的交叉
+    # 3. Cross-cutting of time series features and statistical features
     if 'feature_1_lag2_diff' in df.columns and 'feature_skewness' in df.columns:
-        # 滞后差分与偏度的交叉，可能捕获时间序列的非对称性
+        # Crossing of lag differentials and deviations, possible capture of asymmetrics of time series
         df['lag_diff_skewness_interaction'] = df['feature_1_lag2_diff'] * df['feature_skewness']
         new_features.append('lag_diff_skewness_interaction')
     
     if 'feature_2_lag1_ratio' in df.columns and 'feature_kurtosis' in df.columns:
-        # 滞后比率与峰度的交叉，可能捕获尖峰厚尾效应
+        # The lag ratio intersects with the peak and may capture the peak thick tail effect Response
         df['lag_ratio_kurtosis_interaction'] = df['feature_2_lag1_ratio'] * df['feature_kurtosis']
         new_features.append('lag_ratio_kurtosis_interaction')
     
-    # 4. 交互特征与异常评分的交叉
+    # 4. Cross-cutting of interactive features and abnormal ratings
     if 'interaction_7_8' in df.columns and 'important_ratio_feature_1_over_lof_score' in df.columns:
-        # 节点7-8交互与特征1异常比率的交叉
+        # Cross-cutting of node 7-8 with abnormal ratio for feature 1
         df['interaction_anomaly_ratio_product'] = df['interaction_7_8'] * df['important_ratio_feature_1_over_lof_score']
         new_features.append('interaction_anomaly_ratio_product')
     
     if 'interaction_7_9' in df.columns and 'important_ratio_isolation_forest_score_over_lof_score' in df.columns:
-        # 节点7-9交互与异常检测方法对比的交叉
+        # Cross-referenced comparison of node 7-9 with abnormality detection methods
         df['interaction_anomaly_comparison_product'] = df['interaction_7_9'] * df['important_ratio_isolation_forest_score_over_lof_score']
         new_features.append('interaction_anomaly_comparison_product')
     
-    # 5. 聚类特征与异常特征的交叉
+    # 5. Cross-cutting of cluster features and anomalies
     if 'kmeans_10_cluster_size' in df.columns and 'lof_score' in df.columns:
-        # 聚类规模与局部异常因子的交叉
+        # Cross-cutting of cluster size with local abnormalities
         df['cluster_size_lof_interaction'] = df['kmeans_10_cluster_size'] * df['lof_score']
         new_features.append('cluster_size_lof_interaction')
     
     if 'kmeans_5_nearest_cluster' in df.columns and 'mahalanobis_distance' in df.columns:
-        # 最近邻聚类与马氏距离的交叉
+        # The recent intersection between the Allied Cluster and the Mars.
         df['nearest_cluster_mahalanobis_product'] = df['kmeans_5_nearest_cluster'] * df['mahalanobis_distance']
         new_features.append('nearest_cluster_mahalanobis_product')
     
-    # 6. 特征变换与异常检测的交叉
+    # 6. Cross-cutting of characterization and anomaly detection
     if 'feature_1_normalized' in df.columns and 'important_abs_diff_feature_1_isolation_forest_score' in df.columns:
-        # 标准化特征与其异常检测差异的交叉
+        # Cross-cutting of standardized features and their abnormality detection
         df['normalized_feature_anomaly_diff_product'] = df['feature_1_normalized'] * df['important_abs_diff_feature_1_isolation_forest_score']
         new_features.append('normalized_feature_anomaly_diff_product')
     
     if 'feature_8_sqrt' in df.columns and 'important_diff_feature_1_minus_isolation_forest_score' in df.columns:
-        # 平方根变换特征与异常差异的交叉
+        # Crossing of square root transformation features and anomalies
         df['sqrt_feature_anomaly_diff_product'] = df['feature_8_sqrt'] * df['important_diff_feature_1_minus_isolation_forest_score']
         new_features.append('sqrt_feature_anomaly_diff_product')
     
-    # 7. 降维特征与统计特征的交叉
+    # 7. Cross-cutting of downscaling and statistical features
     if 'pca_component_6' in df.columns and 'feature_entropy' in df.columns:
-        # PCA主成分与信息熵的交叉
+        # Intersection of the main PCB component with information entropy
         df['pca_entropy_interaction'] = df['pca_component_6'] * df['feature_entropy']
         new_features.append('pca_entropy_interaction')
     
     if 'ica_component_8' in df.columns and 'feature_skewness' in df.columns:
-        # ICA独立成分与偏度的交叉
+        # Intersection of ICA independent constituents with bias
         df['ica_skewness_interaction'] = df['ica_component_8'] * df['feature_skewness']
         new_features.append('ica_skewness_interaction')
     
-    # 8. 特征重要性相关的交叉
+    # 8. Cross-cutting in relation to the importance of features
     if 'important_ratio_feature_1_over_lof_score' in df.columns and 'important_ratio_feature_2_over_lof_score' in df.columns:
-        # 不同特征相对于LOF的重要性比率的相互作用
+        # Interaction of different features relative to LOF importance ratio
         df['feature_importance_ratio_product'] = df['important_ratio_feature_1_over_lof_score'] * df['important_ratio_feature_2_over_lof_score']
         new_features.append('feature_importance_ratio_product')
     
     if 'important_product_feature_1_lof_score' in df.columns and 'important_product_isolation_forest_score_one_class_svm_score' in df.columns:
-        # 不同异常检测方法的重要性乘积的交叉
+        # Cross-cutting of the weight of different abnormality detection methods
         df['anomaly_importance_product_interaction'] = df['important_product_feature_1_lof_score'] * df['important_product_isolation_forest_score_one_class_svm_score']
         new_features.append('anomaly_importance_product_interaction')
     
-    # 9. 滚动统计与异常检测的交叉
+    # 9. Cross-cutting of rolling statistics and anomaly detection
     if 'feature_0_rolling_max_ws10' in df.columns and 'important_ratio_isolation_forest_score_over_feature_entropy' in df.columns:
-        # 滚动最大值与异常/信息熵比率的交叉
+        # Cross-scroll maximum value with anomaly/information entropy ratio
         df['rolling_max_anomaly_entropy_ratio_product'] = df['feature_0_rolling_max_ws10'] * df['important_ratio_isolation_forest_score_over_feature_entropy']
         new_features.append('rolling_max_anomaly_entropy_ratio_product')
     
     if 'feature_2_rolling_max_ws5' in df.columns and 'lof_score' in df.columns:
-        # 短期滚动最大值与LOF分数的交叉
+        # Maximum short-term scrolling value crosses the LOF fraction
         df['short_rolling_max_lof_interaction'] = df['feature_2_rolling_max_ws5'] * df['lof_score']
         new_features.append('short_rolling_max_lof_interaction')
     
-    # 10. 特征差异与图嵌入的交叉
+    # 10. Cross-cutting feature differences and graph embedding
     if 'orig_feat1_degree_diff' in df.columns and 'gnn_embedding_dim2' in df.columns:
-        # 原始特征度差与图嵌入的交叉
+        # Crossing of original feature differentials and embedded maps
         df['degree_diff_graph_embedding_product'] = df['orig_feat1_degree_diff'] * df['gnn_embedding_dim2']
         new_features.append('degree_diff_graph_embedding_product')
     
     if 'important_abs_diff_feature_1_laplacian_dim0' in df.columns and 'laplacian_dim7' in df.columns:
-        # 拉普拉斯特征差异与拉普拉斯维度的交叉
+        # The intersection of La Plasz identity differences with La Plasvido
         df['laplacian_diff_dimension_product'] = df['important_abs_diff_feature_1_laplacian_dim0'] * df['laplacian_dim7']
         new_features.append('laplacian_diff_dimension_product')
     
-    # 11. 多项式特征与异常检测的交叉
+    # 11. Cross-cutting of multiple features and abnormality detection
     if 'feature_1_poly2' in df.columns and 'important_diff_feature_1_minus_isolation_forest_score' in df.columns:
-        # 二次多项式特征与异常差异的交叉
+        # Cross-cutting of secondary polygraphs and anomalies
         df['poly2_feature_anomaly_diff_product'] = df['feature_1_poly2'] * df['important_diff_feature_1_minus_isolation_forest_score']
         new_features.append('poly2_feature_anomaly_diff_product')
     
     if 'poly_feat_7' in df.columns and 'anomaly_score_max' in df.columns:
-        # 多项式特征与最大异常分数的交叉
+        # Crossing of multiple features with maximum anomaly fraction
         df['poly_feature_anomaly_max_product'] = df['poly_feat_7'] * df['anomaly_score_max']
         new_features.append('poly_feature_anomaly_max_product')
     
-    # 12. 特征分桶与统计量的交叉
+    # 12. Cross-cutting of the feature drums and statistics
     if 'feature_8_bucket' in df.columns and 'feature_range' in df.columns:
-        # 特征分桶与值域的交叉
+        # Crossing of the feature sub-barrel and the value field
         df['bucket_range_interaction'] = df['feature_8_bucket'] * df['feature_range']
         new_features.append('bucket_range_interaction')
     
     if 'feature_6_bucket' in df.columns and 'feature_skewness' in df.columns:
-        # 特征分桶与偏度的交叉
+        # Crossing of the feature sub-barrel and dichotomy
         df['bucket_skewness_interaction'] = df['feature_6_bucket'] * df['feature_skewness']
         new_features.append('bucket_skewness_interaction')
     
-    # 13. 切比雪夫特征与异常检测的交叉
+    # 13. Cross-checking of Chebyschev features with abnormalities
     if 'chebyshev_19' in df.columns and 'important_ratio_feature_1_over_isolation_forest_score' in df.columns:
-        # 切比雪夫多项式与异常比率的交叉
+        # Chebby Scheffer's Multiform and Unusual Ratios
         df['chebyshev_anomaly_ratio_product'] = df['chebyshev_19'] * df['important_ratio_feature_1_over_isolation_forest_score']
         new_features.append('chebyshev_anomaly_ratio_product')
     
     if 'chebyshev_11' in df.columns and 'lof_score' in df.columns:
-        # 切比雪夫多项式与LOF分数的交叉
+        # Chebby Schiff crosses the LOF score
         df['chebyshev_lof_interaction'] = df['chebyshev_11'] * df['lof_score']
         new_features.append('chebyshev_lof_interaction')
     
-    # 14. 特征熵与异常比率的交叉
+    # Intersection of characteristic entropy with abnormality ratio
     if 'feature_entropy' in df.columns and 'important_ratio_isolation_forest_score_over_feature_entropy' in df.columns:
-        # 信息熵与异常/熵比率的交叉（二次效应）
+        # Intersection of information entropy with abnormality/permium ratio (secondary effect)
         df['entropy_anomaly_entropy_ratio_product'] = df['feature_entropy'] * df['important_ratio_isolation_forest_score_over_feature_entropy']
         new_features.append('entropy_anomaly_entropy_ratio_product')
     
-    # 15. 特征排名与异常检测的交叉
+    # 15. Cross-checking of feature ranking with abnormality detection
     if 'feature_1_rank' in df.columns and 'important_ratio_feature_1_over_lof_score' in df.columns:
-        # 特征排名与其异常比率的交叉
+        # Crossing of the feature ranking with its abnormal ratio
         df['rank_anomaly_ratio_product'] = df['feature_1_rank'] * df['important_ratio_feature_1_over_lof_score']
         new_features.append('rank_anomaly_ratio_product')
     
-    # 16. 创建一些有意义的比值特征（不是简单的乘积）
+    # 16. Create some meaningful margin features (not simple product)
     if 'feature_max' in df.columns and 'feature_range' in df.columns and 'feature_max' not in [0, np.nan]:
-        # 最大值与值域的比值，反映分布形态
+        # Maximum value to range, reflecting distribution pattern
         df['max_to_range_ratio'] = df['feature_max'] / (df['feature_range'] + 1e-8)
         new_features.append('max_to_range_ratio')
     
     if 'lof_score' in df.columns and 'important_ratio_isolation_forest_score_over_lof_score' in df.columns:
-        # LOF分数与异常方法对比的加权组合
+        # Weighted combination of LOF fractions and abnormal methods
         df['lof_weighted_comparison'] = df['lof_score'] * np.log1p(df['important_ratio_isolation_forest_score_over_lof_score'])
         new_features.append('lof_weighted_comparison')
     
     if 'feature_skewness' in df.columns and 'feature_kurtosis' in df.columns:
-        # 偏度与峰度的相互作用，反映分布的非正态性
+        # The interaction of bias and peaks, reflecting non-normality of distribution
         df['skewness_kurtosis_interaction'] = df['feature_skewness'] * np.abs(df['feature_kurtosis'])
         new_features.append('skewness_kurtosis_interaction')
     
-    # 确保只返回最多30个新特征
+    # Ensure that only 30 new features are returned
     if len(new_features) > 30:
         new_features = new_features[:30]
-        # 删除多余的特征列
+        # Remove superfluous feature column
         for feat in new_features[30:]:
             if feat in df.columns:
                 df.drop(columns=[feat], inplace=True)
     
-    print(f"成功创建 {len(new_features)} 个有意义的交叉特征")
-    print("新特征列表:", new_features)
+    print(f"Created successfully {len(new_features)} A meaningful cross-cutting feature.")
+    print("New feature list:", new_features)
     
     return df, new_features
 
@@ -562,7 +558,7 @@ def create_cross_features(df_, dataset_name):
 
 
 def load_test_data(data_dir, label_file, dataset_name):
-    """加载测试数据、标签并进行特征选择"""
+    """Load test data, labels and select features"""
     print("=" * 60)
     print(f"Loading test data - Dataset: {dataset_name}")
     print("=" * 60)
@@ -570,7 +566,7 @@ def load_test_data(data_dir, label_file, dataset_name):
     if dataset_name == 'tfinance':
         feature_base = data_dir
         
-        # 加载各个特征文件
+        # Loading all feature files
         print("Loading feature files...")
         df_node_enhanced = pd.read_pickle(os.path.join(feature_base, '01_base_features.pkl'))
         df_node_enhanced = pd.concat([df_node_enhanced, pd.read_pickle(os.path.join(feature_base, '02_structural_features.pkl'))], axis=1)
@@ -585,7 +581,7 @@ def load_test_data(data_dir, label_file, dataset_name):
         
         print(f"  Feature data shape: {df_node_enhanced.shape}")
     else:
-        # 对于其他数据集，加载常规的特征文件
+        # For other data sets, load general feature files
         print("Loading feature files...")
         df_node = pd.read_pickle(os.path.join(data_dir, 'df_node_enhanced_mk.pkl'))
         feature_new = pd.read_pickle(os.path.join(data_dir, 'feature_new.pkl'))
@@ -597,7 +593,7 @@ def load_test_data(data_dir, label_file, dataset_name):
         print(f"  feature_null: {feature_null.shape}")
         print(f"  Merged feature data: {df_node_enhanced.shape}")
     
-    # 加载标签
+    # Load Tabs
     print(f"\nLoading label data: {label_file}")
     data_np = np.load(label_file)
     y = data_np['y']
@@ -605,7 +601,7 @@ def load_test_data(data_dir, label_file, dataset_name):
     print(f"  Positive samples: {y.sum()}")
     print(f"  Positive ratio: {y.mean():.4f}")
     
-    # 添加label列
+    # Add Label Column
     try:
         df_node_enhanced['label'] = [f[0] for f in y]
     except:
@@ -613,7 +609,7 @@ def load_test_data(data_dir, label_file, dataset_name):
     
     print(f"  Final test data shape: {df_node_enhanced.shape}")
     
-    # 返回元组 (df, y)，main函数会解包
+    # returns the group (df, y), the Main function solves Package
     return df_node_enhanced, y
 
 
@@ -634,14 +630,14 @@ def select_features(df, cols_keep):
 
 
 def load_models_and_predict(X_test, model_dir, model_type, n_folds=5):
-    """加载各折模型并进行集成预测"""
-    print(f"\n加载 {n_folds} 折 {model_type.upper()} 模型...")
+    """Loading and integrating models"""
+    print(f"\nLoad {n_folds} Decline {model_type.upper()} Model...")
     
     test_predictions = np.zeros(len(X_test))
     fold_predictions = []
     
     for fold in range(1, n_folds + 1):
-        # 构建模型文件路径 - 与train.py保存格式一致
+        # Build model file path - consistent with track.py save format
         if model_type == 'lgb':
             model_path = os.path.join(model_dir, f'lightgbm_fold_{fold}.txt')
         elif model_type == 'xgb':
@@ -651,14 +647,14 @@ def load_models_and_predict(X_test, model_dir, model_type, n_folds=5):
         else:
             raise ValueError(f"Unknown model type: {model_type}")
         
-        # 检查模型文件是否存在
+        # Check if model files exist
         if not os.path.exists(model_path):
             print(f"  ⚠️ Model file not found: {model_path}")
             continue
         
         print(f"  Loading fold {fold} model: {model_path}")
         
-        # 加载模型
+        # Load Model
         if model_type == 'lgb':
             model = lgb.Booster(model_file=model_path)
             fold_pred = model.predict(X_test)
@@ -679,32 +675,32 @@ def load_models_and_predict(X_test, model_dir, model_type, n_folds=5):
 
 
 def evaluate_predictions(y_true, y_pred_proba, fold_predictions=None):
-    """计算并输出评估指标"""
+    """Calculate and output assessment indicators"""
     print("\n" + "=" * 60)
     print("Evaluation Results")
     print("=" * 60)
     
-    # 基础指标
+    # Basic indicators
     auc_score = roc_auc_score(y_true, y_pred_proba)
     y_pred_label = (y_pred_proba > 0.5).astype(int)
     accuracy = accuracy_score(y_true, y_pred_label)
     f1 = f1_score(y_true, y_pred_label)
     ap_score = average_precision_score(y_true, y_pred_proba)
     
-    print(f"\n【Ensemble Model Results】")
+    print(f"\n[Ensemble Model Results]")
     print(f"  AUC-ROC: {auc_score:.6f}")
     print(f"  Accuracy: {accuracy:.6f}")
     print(f"  F1-Score: {f1:.6f}")
     print(f"  Average Precision: {ap_score:.6f}")
     
-    # 混淆矩阵
+    # Confusion Matrix
     cm = confusion_matrix(y_true, y_pred_label)
     tn, fp, fn, tp = cm.ravel()
     print(f"\n  Confusion Matrix:")
     print(f"    TN: {tn}, FP: {fp}")
     print(f"    FN: {fn}, TP: {tp}")
     
-    # 更多指标
+    # Additional indicators
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
@@ -713,9 +709,9 @@ def evaluate_predictions(y_true, y_pred_proba, fold_predictions=None):
     print(f"  Recall: {recall:.4f}")
     print(f"  Specificity: {specificity:.4f}")
     
-    # 各折指标
+    # Indicators
     if fold_predictions is not None:
-        print(f"\n【Per-Fold Results】")
+        print(f"\n[Per-Fold Results]")
         fold_aucs = []
         fold_f1s = []
         
@@ -732,7 +728,7 @@ def evaluate_predictions(y_true, y_pred_proba, fold_predictions=None):
         print(f"\n  Mean AUC: {np.mean(fold_aucs):.6f} ± {np.std(fold_aucs):.6f}")
         print(f"  Mean F1: {np.mean(fold_f1s):.6f} ± {np.std(fold_f1s):.6f}")
     
-    # 汇总所有指标
+    # Summary of all indicators
     metrics = {
         'auc': auc_score,
         'accuracy': accuracy,
@@ -748,11 +744,11 @@ def evaluate_predictions(y_true, y_pred_proba, fold_predictions=None):
 
 
 def save_results(y_true, y_pred_proba, fold_predictions, output_dir, dataset_name, model_type, metrics):
-    """保存预测结果和评估指标"""
-    print(f"\n保存结果到 {output_dir}...")
+    """Preservation of projections and assessment indicators"""
+    print(f"\nSave result to {output_dir}...")
     os.makedirs(output_dir, exist_ok=True)
     
-    # 保存集成预测结果
+    # Save integrated predictions
     ensemble_path = os.path.join(output_dir, f'{model_type}_test_predictions.npz')
     np.savez(ensemble_path, 
              y_true=y_true, 
@@ -760,13 +756,13 @@ def save_results(y_true, y_pred_proba, fold_predictions, output_dir, dataset_nam
              y_pred_label=(y_pred_proba > 0.5).astype(int))
     print(f"  Ensemble predictions: {ensemble_path}")
     
-    # 保存各折预测结果
+    # Save discount forecast results
     for fold, fold_pred in enumerate(fold_predictions, 1):
         fold_path = os.path.join(output_dir, f'{model_type}_fold_{fold}_predictions.npy')
         np.save(fold_path, fold_pred)
     print(f"  Fold predictions saved to {output_dir}")
     
-    # 保存评估指标摘要
+    # Preservation of summary assessment indicators
     metrics_summary = {
         'dataset': dataset_name,
         'model': model_type,
@@ -777,7 +773,7 @@ def save_results(y_true, y_pred_proba, fold_predictions, output_dir, dataset_nam
         pickle.dump(metrics_summary, f)
     print(f"  Metrics summary: {metrics_path}")
     
-    # 保存详细结果CSV
+    # Save detailed result CSV
     results_df = pd.DataFrame({
         'true_label': y_true,
         'pred_probability': y_pred_proba,
@@ -797,7 +793,7 @@ def main():
     seed = args.seed
     n_folds = args.n_folds
     
-    # 设置路径
+    # Set Path
     data_dir = os.path.join(args.data_dir, dataset_name, 'test')
     label_file = os.path.join(args.data_split_dir, f'{dataset_name}_test.npz')
     model_dir = os.path.join(args.model_dir, dataset_name)
@@ -812,13 +808,13 @@ def main():
     print(f"Model directory: {model_dir}")
     print("=" * 60)
     
-    # 1. 加载测试数据和标签
+    # 1. Load test data and labels
     print("\n" + "=" * 60)
     print("Loading test data...")
     print("=" * 60)
     df_test, y_test = load_test_data(data_dir, label_file, dataset_name)
     
-    # 2. 特征选择
+    # 2. Identity selection
     print("\n" + "=" * 60)
     print("Selecting features...")
     print("=" * 60)
@@ -826,14 +822,14 @@ def main():
     COLS_KEEP = get_COLS_KEEP(dataset_name)
     df_selected = select_features(df_test, COLS_KEEP)
     
-    # 3. 创建交叉特征
+    # 3. Create cross-cutting features
     print("\nCreating cross features...")
     df_cross, new_features = create_cross_features(df_selected, dataset_name)
     
-    # 4. 构建最终特征列表
+    # 4. Build final feature list
     cols_fea = [f for f in df_cross.columns if f != 'label']
     
-    # 避免重复特征
+    # Avoid duplication of features
     cols_fea_set = set(cols_fea)
     new_features_unique = [f for f in new_features if f not in cols_fea_set]
     cols_fea_cross = cols_fea + new_features_unique
@@ -842,12 +838,12 @@ def main():
     print(f"Cross features: {len(new_features_unique)}")
     print(f"Final features: {len(cols_fea_cross)}")
     
-    # 5. 准备测试数据
+    # 5. Preparation of test data
     X_test = df_cross[cols_fea_cross].reset_index(drop=True)
     print(f"\nTest samples: {len(X_test)}")
     print(f"Positive ratio: {y_test.mean():.4f}")
     
-    # 6. 加载模型并进行预测
+    # 6. Load and forecast models
     print("\n" + "=" * 60)
     print("Loading models and making predictions...")
     print("=" * 60)
@@ -856,10 +852,10 @@ def main():
         X_test, model_dir, model_type, n_folds
     )
     
-    # 7. 计算评估指标
+    # 7. Calculation of assessment indicators
     metrics = evaluate_predictions(y_test, test_predictions, fold_predictions)
     
-    # 8. 保存结果
+    # 8. Preservation of results
     save_results(y_test, test_predictions, fold_predictions, output_dir, 
                 dataset_name, model_type, metrics)
     

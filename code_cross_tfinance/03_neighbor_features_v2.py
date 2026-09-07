@@ -1,7 +1,5 @@
-"""
-组合邻居特征聚合脚本
-同时处理原始连续特征的邻居聚合和离散分箱特征的邻居聚合
-"""
+"""Combining Neighbour's Feature Cohesion Script
+Convergence of neighbours dealing with the original continuum and the discrete compartment."""
 
 import numpy as np
 import pandas as pd
@@ -21,36 +19,34 @@ def compute_combined_neighbor_features(
     n_bins: int = 5,
     output_path: str = None
 ) -> pd.DataFrame:
-    """
-    计算组合邻居聚合特征：
-    1. 原始连续特征的邻居聚合
-    2. 5分箱特征的邻居聚合
-    
-    参数:
-        edge_index: 边索引数组 (2, n_edges)
-        x: 原始特征矩阵 (n_nodes, n_features)
-        max_neighbors_1hop: 1-hop最大邻居数
-        max_neighbors_2hop: 2-hop最大邻居数
-        n_bins: 分箱数量
-        output_path: 输出文件路径
-    
-    返回:
-        包含所有聚合特征的DataFrame
-    """
+    """Calculating a combination of neighbourhood aggregation features:
+1. Consistency of the original continuum
+2. Consistency of the 5-box feature
+
+Parameters:
+edge index: border index array (2, n edges)
+x: Original characterization matrix (n nodes, n features)
+max neigbors 1hop:1-hop maximum number of neighbors
+max neigbors 2hop: 2-hop maximum number of neighbours
+n bins: Number of boxes
+output path: Output file path
+
+Return:
+DataFrame with all polymeric features"""
     print("=" * 60)
-    print("开始计算组合邻居特征...")
+    print("Start calculating group neighbor features...")
     print("=" * 60)
     
     n_nodes = x.shape[0]
     n_features = x.shape[1]
-    print(f"  节点数: {n_nodes}, 原始特征数: {n_features}")
+    print(f"  Number of nodes: {n_nodes}, Number of original features: {n_features}")
     
-    # 创建邻接矩阵
+    # Create an adjacent matrix
     row, col = edge_index[0], edge_index[1]
     adj_matrix = sp.csr_matrix((np.ones_like(row), (row, col)), 
                               shape=(n_nodes, n_nodes))
     
-    # 对称化用于无向邻居计算
+    # Symmetrical for non-neighbor calculation
     adj_matrix_sym = adj_matrix + adj_matrix.T
     adj_matrix_sym.data = np.ones_like(adj_matrix_sym.data)
     adj_matrix_csc = adj_matrix_sym.tocsc()
@@ -58,14 +54,14 @@ def compute_combined_neighbor_features(
     feature_dict = {}
     
     # ============================================================
-    # 第一部分：原始连续特征的邻居聚合
+    # Part I: Convergence of neighbours with original continuum features
     # ============================================================
     print("\n" + "=" * 60)
-    print("第一部分：原始连续特征邻居聚合")
+    print("Part one: Convergence of original continuum features")
     print("=" * 60)
     
-    # 1. 1-hop邻居特征聚合
-    print("\n计算1-hop邻居特征聚合...")
+    # 1. 1-hop Neighbour characterization aggregation
+    print("\\n Calculating 1-hop PHP characterization fusion...")
     neighbor_1hop_features = aggregate_neighbor_features(
         adj_matrix_csc, x, max_neighbors=max_neighbors_1hop
     )
@@ -74,10 +70,10 @@ def compute_combined_neighbor_features(
         for agg_type, values in neighbor_1hop_features[i].items():
             feature_dict[f'orig_n1_{agg_type}_feat{i}'] = values.astype(np.float32)
     
-    # 2. 2-hop邻居特征聚合
-    print("计算2-hop邻居特征...")
+    # 2. 2-hop neighbourhood characterization
+    print("Calculating 2-hop Neighbourhood Features...")
     if n_nodes > 100000:
-        print("  节点数过多，使用采样计算...")
+        print("Too many nodes, using sampling...")
         neighbor_2hop_features = compute_2hop_features_sampled(
             adj_matrix_sym, x, max_neighbors_2hop, sample_size=5000
         )
@@ -91,42 +87,42 @@ def compute_combined_neighbor_features(
         for agg_type, values in neighbor_2hop_features[i].items():
             feature_dict[f'orig_n2_{agg_type}_feat{i}'] = values.astype(np.float32)
     
-    # 3. 邻居度与特征的相关性
-    print("计算邻居度相关性特征...")
+    # 3. Relevance of neighbourhood to identity
+    print("Calculating Neighbourly Relevance Features...")
     degree_corr = compute_degree_correlation_features(adj_matrix_csc, x)
     for feat_name, values in degree_corr.items():
         feature_dict[feat_name] = values.astype(np.float32)
     
-    # 4. 邻居特征分布统计
-    print("计算邻居特征分布...")
+    # 4. Statistics on the distribution of neighbourhood features
+    print("Calculating Neighbourly Feature Distribution...")
     neighbor_dist = compute_neighbor_distribution_stats(adj_matrix_csc, x, max_neighbors_1hop)
     for stat_name, stat_values in neighbor_dist.items():
         feature_dict[stat_name] = stat_values.astype(np.float32)
     
-    # 5. 出入邻居特征差异
-    print("计算出入邻居差异...")
+    # 5. Disparities in access to neighbours
+    print("Calculating the difference in access...")
     in_out_diff = compute_in_out_difference_features(adj_matrix, x, max_neighbors_1hop)
     for feat_name, values in in_out_diff.items():
         feature_dict[feat_name] = values.astype(np.float32)
     
     # ============================================================
-    # 第二部分：分箱特征的邻居聚合
+    # Part II: Convergence of neighbours with semi-box features
     # ============================================================
     print("\n" + "=" * 60)
-    print("第二部分：分箱特征邻居聚合")
+    print("Part Two: Sub-box Qualitative Neighbourhood Convergence")
     print("=" * 60)
     
-    # 对原始特征进行5分箱
-    print("\n对原始特征进行5分箱...")
+    # Five minutes for original features.
+    print("Five minutes for original features...")
     from sklearn.preprocessing import KBinsDiscretizer
     kbin = KBinsDiscretizer(n_bins=n_bins, encode="ordinal", strategy="quantile")
     bin_features = kbin.fit_transform(x).astype(int)
-    print(f"  分箱特征维度: {bin_features.shape}")
-    print(f"  分箱值范围: [{bin_features.min()}, {bin_features.max()}]")
+    print(f"  Box character dimensions: {bin_features.shape}")
+    print(f"  Box range: [{bin_features.min()}, {bin_features.max()}]")
     
-    # 1. 分箱特征的基本邻居聚合
-    print("\n计算分箱特征基本聚合...")
-    for feat_idx in tqdm(range(n_features), desc="分箱基本聚合"):
+    # 1. Basic neighbourhood aggregation of the semi-box features
+    print("\\n Calculating the Basic Aggregation of Subbox Features...")
+    for feat_idx in tqdm(range(n_features), desc="Subbox Basic Aggregation"):
         feat_values = bin_features[:, feat_idx]
         
         neighbor_mean = np.zeros(n_nodes, dtype=np.float32)
@@ -160,12 +156,12 @@ def compute_combined_neighbor_features(
         feature_dict[f'bin_n1_sum_feat{feat_idx}'] = neighbor_sum
         feature_dict[f'bin_n1_count_feat{feat_idx}'] = neighbor_count
     
-    # 2. 分箱分布统计（众数和比例）
-    print("\n计算分箱分布统计（众数和比例）...")
-    for feat_idx in tqdm(range(min(5, n_features)), desc="分箱分布"):
+    # 2. Box distribution statistics (number and proportion)
+    print("\\n Calculating Box Distribution Statistics ( count and proportion)...")
+    for feat_idx in tqdm(range(min(5, n_features)), desc="Box Distribution"):
         feat_values = bin_features[:, feat_idx]
         
-        # 邻居中每个箱子的占比
+        # Share of each box in the neighborhood
         for box_id in range(n_bins):
             box_ratio = np.zeros(n_nodes, dtype=np.float32)
             
@@ -178,7 +174,7 @@ def compute_combined_neighbor_features(
             
             feature_dict[f'bin_n1_box{box_id}_ratio_feat{feat_idx}'] = box_ratio
         
-        # 邻居分箱的众数
+        # The number of neighbors in the box.
         neighbor_mode = np.zeros(n_nodes, dtype=np.float32)
         for node in range(n_nodes):
             neighbors = adj_matrix_csc[:, node].indices
@@ -189,7 +185,7 @@ def compute_combined_neighbor_features(
         
         feature_dict[f'bin_n1_mode_feat{feat_idx}'] = neighbor_mode
         
-        # 邻居分箱的熵（分布的不确定性）
+        # Neighbor's compartment entropy (uncertain distribution)
         neighbor_entropy = np.zeros(n_nodes, dtype=np.float32)
         for node in range(n_nodes):
             neighbors = adj_matrix_csc[:, node].indices
@@ -203,12 +199,12 @@ def compute_combined_neighbor_features(
         
         feature_dict[f'bin_n1_entropy_feat{feat_idx}'] = neighbor_entropy
     
-    # 3. 跨分箱特征的邻居聚合
-    print("\n计算跨特征邻居聚合...")
+    # 3. Consistency of cross-box features
+    print("Calculating Cross-Performance Neighbor Convergence...")
     neighbor_bin_mean = np.zeros((n_nodes, n_features), dtype=np.float32)
     neighbor_bin_std = np.zeros((n_nodes, n_features), dtype=np.float32)
     
-    for node in tqdm(range(n_nodes), desc="跨特征聚合"):
+    for node in tqdm(range(n_nodes), desc="Cross-Purpose Aggregation"):
         neighbors = adj_matrix_csc[:, node].indices
         
         if len(neighbors) > max_neighbors_1hop:
@@ -227,20 +223,20 @@ def compute_combined_neighbor_features(
     feature_dict['bin_all_min'] = np.min(neighbor_bin_mean, axis=1).astype(np.float32)
     feature_dict['bin_all_range'] = (np.max(neighbor_bin_mean, axis=1) - np.min(neighbor_bin_mean, axis=1)).astype(np.float32)
     
-    # 创建DataFrame
+    # Create DataFrame
     features_df = pd.DataFrame(feature_dict)
     
     print("\n" + "=" * 60)
-    print("特征工程完成!")
+    print("Feature work complete!")
     print("=" * 60)
-    print(f"  总特征维度: {features_df.shape}")
-    print(f"  原始特征聚合数: {sum(1 for c in features_df.columns if c.startswith('orig_'))}")
-    print(f"  分箱特征聚合数: {sum(1 for c in features_df.columns if c.startswith('bin_'))}")
+    print(f"  General characteristic dimension: {features_df.shape}")
+    print(f"  Original characterization aggregates: {sum(1 for c in features_df.columns if c.startswith('orig_'))}")
+    print(f"  Case-by-box feature aggregates: {sum(1 for c in features_df.columns if c.startswith('bin_'))}")
     
     if output_path:
         with open(output_path, 'wb') as f:
             pd.to_pickle(features_df, f)
-        print(f"  保存至: {output_path}")
+        print(f"  Save To: {output_path}")
     
     return features_df
 
@@ -249,7 +245,7 @@ def aggregate_neighbor_features(adj_matrix: sp.csc_matrix,
                                 node_features: np.ndarray,
                                 max_neighbors: int = 100,
                                 prefix: str = 'neighbor') -> Dict[int, Dict[str, np.ndarray]]:
-    """聚合邻居特征"""
+    """Combining Neighbours"""
     n_nodes, n_features = node_features.shape
     
     results = {i: {} for i in range(n_features)}
@@ -261,7 +257,7 @@ def aggregate_neighbor_features(adj_matrix: sp.csc_matrix,
         results[feat_idx]['std'] = np.zeros(n_nodes, dtype=np.float32)
         results[feat_idx]['sum'] = np.zeros(n_nodes, dtype=np.float32)
     
-    for node in tqdm(range(n_nodes), desc=f"聚合{prefix}特征"):
+    for node in tqdm(range(n_nodes), desc=f"Aggregation{prefix}features"):
         neighbors = adj_matrix[:, node].indices
         
         if len(neighbors) > max_neighbors:
@@ -288,7 +284,7 @@ def compute_2hop_features_sampled(adj_matrix: sp.csr_matrix,
                                   node_features: np.ndarray,
                                   max_neighbors: int = 500,
                                   sample_size: int = 5000) -> Dict[int, Dict[str, np.ndarray]]:
-    """采样计算2-hop邻居特征"""
+    """Sample calculation of 2-hop neighbor features"""
     n_nodes = adj_matrix.shape[0]
     sampled_nodes = np.random.choice(n_nodes, min(sample_size, n_nodes), replace=False)
     
@@ -297,7 +293,7 @@ def compute_2hop_features_sampled(adj_matrix: sp.csr_matrix,
     
     adj_matrix = adj_matrix.tocsc()
     
-    for node in tqdm(sampled_nodes, desc="采样计算2-hop"):
+    for node in tqdm(sampled_nodes, desc="Sample calculation 2-hop"):
         neighbors_1hop = adj_matrix[:, node].indices
         
         if len(neighbors_1hop) == 0:
@@ -339,13 +335,13 @@ def compute_2hop_features_sampled(adj_matrix: sp.csr_matrix,
 
 def compute_degree_correlation_features(adj_matrix: sp.csc_matrix,
                                        node_features: np.ndarray) -> Dict[str, np.ndarray]:
-    """计算邻居度与特征的相关性"""
+    """Calculating Neighborhood Relation to Characterism"""
     n_nodes = adj_matrix.shape[0]
     degree = np.array(adj_matrix.sum(axis=1)).flatten()
     results = {}
     n_features = node_features.shape[1]
     
-    for feat_idx in tqdm(range(min(3, n_features)), desc="度相关性"):
+    for feat_idx in tqdm(range(min(3, n_features)), desc="Relevance"):
         feature_values = node_features[:, feat_idx]
         neighbor_feat_mean = np.zeros(n_nodes, dtype=np.float32)
         neighbor_degree_mean = np.zeros(n_nodes, dtype=np.float32)
@@ -373,11 +369,11 @@ def compute_degree_correlation_features(adj_matrix: sp.csc_matrix,
 def compute_neighbor_distribution_stats(adj_matrix: sp.csc_matrix,
                                        node_features: np.ndarray,
                                        max_neighbors: int = 50) -> Dict[str, np.ndarray]:
-    """计算邻居特征分布统计"""
+    """Computation of neighbourhood feature distribution statistics"""
     n_nodes, n_features = node_features.shape
     results = {}
     
-    for feat_idx in tqdm(range(min(3, n_features)), desc="分布统计"):
+    for feat_idx in tqdm(range(min(3, n_features)), desc="Distribution statistics"):
         feature_values = node_features[:, feat_idx]
         skewness = np.zeros(n_nodes, dtype=np.float32)
         kurtosis = np.zeros(n_nodes, dtype=np.float32)
@@ -413,12 +409,12 @@ def compute_neighbor_distribution_stats(adj_matrix: sp.csc_matrix,
 def compute_in_out_difference_features(adj_matrix: sp.csr_matrix,
                                       node_features: np.ndarray,
                                       max_neighbors: int = 50) -> Dict[str, np.ndarray]:
-    """计算出入邻居特征差异"""
+    """Calculate differences in access to and from neighbours"""
     n_nodes, n_features = node_features.shape
     adj_matrix_t = adj_matrix.T
     results = {}
     
-    for feat_idx in tqdm(range(min(3, n_features)), desc="出入差异"):
+    for feat_idx in tqdm(range(min(3, n_features)), desc="Variance"):
         feature_values = node_features[:, feat_idx]
         in_feat_mean = np.zeros(n_nodes, dtype=np.float32)
         out_feat_mean = np.zeros(n_nodes, dtype=np.float32)
@@ -456,33 +452,33 @@ def compute_in_out_difference_features(adj_matrix: sp.csr_matrix,
 
 
 def main():
-    parser = argparse.ArgumentParser(description='组合邻居特征聚合')
+    parser = argparse.ArgumentParser(description='Combining Neighbors\' Feature Aggregation')
     parser.add_argument('--input_path', type=str, required=True,
-                       help='输入npz文件路径（包含edge_index和x）')
+                       help='Enter a path to the npz file (including edge index and x)')
     parser.add_argument('--output_path', type=str, required=True,
-                       help='输出pickle文件路径')
+                       help='Output Pickle File Path')
     parser.add_argument('--max_neighbors_1hop', type=int, default=50,
-                       help='1-hop最大邻居数')
+                       help='Maximum number of neighbours 1-hop')
     parser.add_argument('--max_neighbors_2hop', type=int, default=500,
-                       help='2-hop最大邻居数')
+                       help='2-hop maximum number of neighbours')
     parser.add_argument('--n_bins', type=int, default=5,
-                       help='分箱数量')
+                       help='Number of boxes')
     args = parser.parse_args()
     
-    print(f"加载数据: {args.input_path}")
+    print(f"Loading data: {args.input_path}")
     data = np.load(args.input_path, allow_pickle=True)
     
     if 'edge_index' not in data:
-        raise ValueError("npz文件必须包含edge_index")
+        raise ValueError("npz file must contain edge index")
     if 'x' not in data:
-        raise ValueError("npz文件必须包含x")
+        raise ValueError("npz files must contain x")
     
     edge_index = data['edge_index']
     x = data['x']
     
-    print(f"  节点数: {x.shape[0]}, 特征数: {x.shape[1]}")
+    print(f"  Number of nodes: {x.shape[0]}, Number of features: {x.shape[1]}")
     
-    # 计算组合邻居特征
+    # Calculating Combination Neighbor Features
     features_df = compute_combined_neighbor_features(
         edge_index, x,
         args.max_neighbors_1hop,
@@ -491,8 +487,8 @@ def main():
         args.output_path
     )
     
-    print(f"\n组合邻居特征工程完成!")
-    print(f"输出文件: {args.output_path}")
+    print(f"\nCombining neighbourhood feature work completed!")
+    print(f"Output file: {args.output_path}")
 
 
 if __name__ == "__main__":
